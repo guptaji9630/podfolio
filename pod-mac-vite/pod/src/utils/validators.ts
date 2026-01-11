@@ -1,7 +1,7 @@
 import { MailComposerData } from '../types';
 
 export const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[^\s@.][^\s@]*(\.[^\s@.]+)*@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
   return emailRegex.test(email);
 };
 

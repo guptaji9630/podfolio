@@ -1,7 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { ContactFormData } from '../types/index.js';
-
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import validator from 'validator';
 
 export const validateContactForm = (
   req: Request,
@@ -28,7 +27,7 @@ export const validateContactForm = (
   }
 
   // Optional fields validation
-  if (senderEmail && !emailRegex.test(senderEmail)) {
+  if (senderEmail && !validator.isEmail(senderEmail)) {
     errors.push('Invalid email format');
   }
 

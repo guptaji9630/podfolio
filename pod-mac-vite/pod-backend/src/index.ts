@@ -50,6 +50,16 @@ app.get('/', (req, res) => {
   });
 });
 
+// Health check endpoint for monitoring
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: ENV.NODE_ENV,
+  });
+});
+
 // 404 handler
 app.use(notFoundHandler);
 

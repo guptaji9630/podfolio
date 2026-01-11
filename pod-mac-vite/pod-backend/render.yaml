@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: pod-backend-api
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RECIPIENT_EMAIL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+    healthCheckPath: /health

@@ -38,9 +38,15 @@ router.post('/', contactLimiter, validateContactForm, async (req, res) => {
     }
   } catch (error: any) {
     console.error('Contact route error:', error);
+    const isProduction = process.env.NODE_ENV === 'production';
+    const errorMessage =
+      !isProduction && error && typeof error.message === 'string'
+        ? error.message
+        : 'Internal server error';
+
     res.status(500).json({
       success: false,
-      error: error.message || 'Internal server error',
+      error: errorMessage,
     });
   }
 });

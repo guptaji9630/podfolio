@@ -36,5 +36,5 @@ export const validateMailForm = (data: Partial<MailComposerData>): {
 };
 
 export const sanitizeInput = (input: string): string => {
-  return input.trim().replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  return input.trim();
 };

@@ -9,7 +9,7 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
 
 export const ENV = {
   // API Configuration
-  API_BASE_URL: getEnvVar('VITE_API_BASE_URL', 'http://localhost:3000/api'),
+  API_BASE_URL: getEnvVar('VITE_API_BASE_URL', 'http://localhost:3002/api'),
   GEMINI_API_KEY: getEnvVar('VITE_GEMINI_API_KEY'),
   
   // Feature Flags

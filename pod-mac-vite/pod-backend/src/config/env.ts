@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const ENV = {
-  PORT: process.env.PORT || 3000,
+  PORT: parseInt(process.env.PORT || '3000', 10),
   NODE_ENV: process.env.NODE_ENV || 'development',
   
   // Email Service
@@ -19,6 +19,13 @@ export const ENV = {
 const required = ['RESEND_API_KEY', 'RECIPIENT_EMAIL'];
 required.forEach(key => {
   if (!process.env[key]) {
-    console.warn(`⚠️  Missing environment variable: ${key}`);
+    console.error(`❌ Missing required environment variable: ${key}`);
+    missingRequired.push(key);
   }
 });
+
+if (missingRequired.length > 0) {
+  throw new Error(
+    `Missing required environment variable(s): ${missingRequired.join(', ')}`
+  );
+}

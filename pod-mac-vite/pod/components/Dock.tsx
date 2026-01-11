@@ -10,13 +10,13 @@ interface DockProps {
 
 export const Dock: React.FC<DockProps> = ({ openApp, activeApp, windows }) => {
   const dockItems = [
-    { id: 'finder' as AppId, icon: 'face_2', label: 'Finder', color: 'bg-blue-500' },
-    { id: 'about' as AppId, icon: 'person', label: 'About Me', color: 'bg-indigo-500' },
-    { id: 'chat' as AppId, icon: 'smart_toy', label: 'AI Assistant', color: 'bg-gradient-to-tr from-cyan-500 to-blue-500' },
-    { id: 'mail' as AppId, icon: 'mail', label: 'Mail', color: 'bg-sky-500', badge: 1 },
-    { id: 'terminal' as AppId, icon: 'terminal', label: 'Terminal', color: 'bg-gray-800' },
+    { id: 'finder' as AppId, icon: 'face_2', label: 'Finder', color: 'bg-blue-500', iconColor: 'text-white' },
+    { id: 'about' as AppId, icon: 'person', label: 'About Me', color: 'bg-indigo-500', iconColor: 'text-white' },
+    { id: 'chat' as AppId, icon: 'smart_toy', label: 'AI Assistant', color: 'bg-gradient-to-tr from-cyan-500 to-blue-500', iconColor: 'text-white' },
+    { id: 'mail' as AppId, icon: 'mail', label: 'Mail', color: 'bg-sky-500', badge: 1, iconColor: 'text-white' },
+    { id: 'terminal' as AppId, icon: 'terminal', label: 'Terminal', color: 'bg-gray-800', iconColor: 'text-white' },
     // { id: 'resume' as AppId, icon: 'description', label: 'Resume', color: 'bg-white', iconColor: 'text-gray-800' },
-    { id: 'settings' as AppId, icon: 'settings', label: 'Settings', color: 'bg-gray-400' },
+    { id: 'settings' as AppId, icon: 'settings', label: 'Settings', color: 'bg-gray-400', iconColor: 'text-white' },
   ];
 
   return (
@@ -33,9 +33,9 @@ export const Dock: React.FC<DockProps> = ({ openApp, activeApp, windows }) => {
               onClick={() => openApp(item.id)}
               className={`group relative w-12 h-12 rounded-xl ${item.color} flex items-center justify-center hover:-translate-y-4 hover:scale-125 transition-all duration-200 ease-out shadow-lg`}
             >
-              {/* <span className={`material-symbols-outlined ${item.iconColor || 'text-white'} text-[30px] drop-shadow-md`}>
+              <span className={`material-symbols-outlined ${item.iconColor || 'text-white'} text-[30px] drop-shadow-md`}>
                 {item.icon}
-              </span> */}
+              </span>
               
               <span className="absolute -top-12 opacity-0 group-hover:opacity-100 bg-black/60 backdrop-blur text-white text-[12px] py-1 px-3 rounded-md transition-opacity duration-200 whitespace-nowrap border border-white/10 shadow-lg pointer-events-none">
                 {item.label}

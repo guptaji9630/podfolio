@@ -31,8 +31,6 @@ class ApiClient {
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
-
       if (!response.ok) {
         throw {
           message: `HTTP ${response.status}: ${response.statusText}`,
@@ -43,8 +41,6 @@ class ApiClient {
       const data = await response.json();
       return { success: true, data };
     } catch (error: any) {
-      clearTimeout(timeoutId);
-
       // Retry on network errors
       if (attempt < this.retryAttempts && this.shouldRetry(error)) {
         await this.delay(API_CONFIG.RETRY_DELAY * (attempt + 1));
@@ -59,6 +55,8 @@ class ApiClient {
           status: error.status,
         },
       };
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 

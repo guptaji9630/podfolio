@@ -17,8 +17,17 @@ export const ENV = {
 
 // Validate required env vars
 const required = ['RESEND_API_KEY'];
+const missingRequired: string[] = [];
+
 required.forEach(key => {
   if (!process.env[key]) {
-    console.warn(`⚠️  Missing environment variable: ${key}`);
+    console.error(`❌ Missing required environment variable: ${key}`);
+    missingRequired.push(key);
   }
 });
+
+if (missingRequired.length > 0) {
+  throw new Error(
+    `Missing required environment variable(s): ${missingRequired.join(', ')}`
+  );
+}

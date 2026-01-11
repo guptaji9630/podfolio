@@ -1,0 +1,72 @@
+name: CI - Build and Type Check
+
+on:
+  pull_request:
+    branches:
+      - main
+      - Backend
+  push:
+    branches:
+      - main
+      - Backend
+
+jobs:
+  frontend-ci:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: pod/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./pod
+        run: npm ci
+
+      - name: Build
+        working-directory: ./pod
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: http://localhost:3002/api
+          VITE_GEMINI_API_KEY: dummy_key_for_ci
+          VITE_ENABLE_AI_TOOLS: true
+
+      - name: CI Summary
+        run: echo "✅ Frontend build successful!"
+
+  backend-ci:
+    name: Backend CI
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: pod-backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./pod-backend
+        run: npm ci
+
+      - name: Type check
+        working-directory: ./pod-backend
+        run: npm run type-check
+
+      - name: Build
+        working-directory: ./pod-backend
+        run: npm run build
+
+      - name: CI Summary
+        run: echo "✅ Backend build and type check successful!"

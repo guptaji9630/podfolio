@@ -1,0 +1,9 @@
+
+{
+  "name": "Abhishek Gupta Portfolio",
+  "description": "A high-fidelity, interactive macOS-inspired portfolio featuring a functional terminal, AI-powered chat assistant (Gemini), and dynamic system settings.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

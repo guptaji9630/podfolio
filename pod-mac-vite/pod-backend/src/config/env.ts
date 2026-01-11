@@ -7,7 +7,7 @@ export const ENV = {
   
   // Email Service
   RESEND_API_KEY: process.env.RESEND_API_KEY!,
-  RECIPIENT_EMAIL: process.env.RECIPIENT_EMAIL || 'abhishekg9630@gmail.com',
+  RECIPIENT_EMAIL: process.env.RECIPIENT_EMAIL!,
   
   // Security
   ALLOWED_ORIGINS: (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(','),
@@ -16,9 +16,7 @@ export const ENV = {
 };
 
 // Validate required env vars
-const required = ['RESEND_API_KEY'];
-const missingRequired: string[] = [];
-
+const required = ['RESEND_API_KEY', 'RECIPIENT_EMAIL'];
 required.forEach(key => {
   if (!process.env[key]) {
     console.error(`❌ Missing required environment variable: ${key}`);

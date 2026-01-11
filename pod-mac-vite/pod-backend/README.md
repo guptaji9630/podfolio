@@ -41,9 +41,13 @@ Edit `.env` and add your configuration:
 PORT=3000
 NODE_ENV=development
 RESEND_API_KEY=your_resend_api_key
-RECIPIENT_EMAIL=abhishekg9630@gmail.com
+RECIPIENT_EMAIL=your-email@example.com
 ALLOWED_ORIGINS=http://localhost:5173
 ```
+
+**Required Environment Variables:**
+- `RESEND_API_KEY`: Your Resend API key (required)
+- `RECIPIENT_EMAIL`: Email address where contact form submissions will be sent (required)
 
 **Get Resend API Key:**
 1. Sign up at [resend.com](https://resend.com)

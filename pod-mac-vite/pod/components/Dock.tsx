@@ -10,7 +10,7 @@ interface DockProps {
 
 export const Dock: React.FC<DockProps> = ({ openApp, activeApp, windows }) => {
   const dockItems = [
-    { id: 'finder' as AppId, icon: 'face_2', label: 'Finder', color: 'bg-blue-500', iconColor: 'text-white' },
+    // { id: 'finder' as AppId, icon: 'face_2', label: 'Finder', color: 'bg-blue-500', iconColor: 'text-white' },
     { id: 'about' as AppId, icon: 'person', label: 'About Me', color: 'bg-indigo-500', iconColor: 'text-white' },
     { id: 'chat' as AppId, icon: 'smart_toy', label: 'AI Assistant', color: 'bg-gradient-to-tr from-cyan-500 to-blue-500', iconColor: 'text-white' },
     { id: 'mail' as AppId, icon: 'mail', label: 'Mail', color: 'bg-sky-500', badge: 1, iconColor: 'text-white' },

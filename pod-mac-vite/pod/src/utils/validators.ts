@@ -36,5 +36,18 @@ export const validateMailForm = (data: Partial<MailComposerData>): {
 };
 
 export const sanitizeInput = (input: string): string => {
-  return input.trim().replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  let sanitized = input.trim();
+
+  // Repeatedly remove <script>...</script> blocks to avoid multi-character sanitization issues
+  let previous: string;
+  const scriptBlockRegex = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
+  do {
+    previous = sanitized;
+    sanitized = sanitized.replace(scriptBlockRegex, '');
+  } while (sanitized !== previous);
+
+  // As a safety net, remove any remaining script tag openings/closings (even if malformed)
+  sanitized = sanitized.replace(/<\s*script\b/gi, '').replace(/<\/\s*script\s*>/gi, '');
+
+  return sanitized;
 };

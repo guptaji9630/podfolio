@@ -52,7 +52,7 @@ router.post('/', contactLimiter, validateContactForm, async (req, res) => {
 });
 
 // Health check endpoint
-router.get('/health', (req, res) => {
+router.get('/health', (_req, res) => {
   res.json({ success: true, message: 'Contact service is running' });
 });
 

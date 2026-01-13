@@ -39,13 +39,14 @@ export class EmailService {
       const result = await resend.emails.send({
         from: 'Portfolio Contact <onboarding@resend.dev>', // Update with your verified domain
         to: data.to,
-        replyTo: data.senderEmail || undefined,
+        reply_to: data.senderEmail || undefined,
         subject: `Portfolio Contact: ${data.subject}`,
         html,
       });
 
-      console.log('✅ Email sent successfully:', result.id);
-      return { success: true, messageId: result.id };
+      const messageId = result.data?.id || 'unknown';
+      console.log('✅ Email sent successfully:', messageId);
+      return { success: true, messageId };
     } catch (error: any) {
       console.error('❌ Email sending failed:', error);
       return { success: false, error: error.message };

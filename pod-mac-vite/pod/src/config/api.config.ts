@@ -8,18 +8,18 @@ export const API_ENDPOINTS = {
   
   // Chat endpoints
   CHAT: {
-    MESSAGE: '/api/chat',
+    MESSAGE: '/chat',
     HISTORY: '/api/chat/history',
   },
   
   // Analytics endpoints
   ANALYTICS: {
-    TRACK: '/api/analytics',
+    TRACK: '/analytics',
   },
   
   // Project endpoints (future)
   PROJECTS: {
-    LIST: '/api/projects',
+    LIST: '/projects',
     DETAIL: (id: string) => `/api/projects/${id}`,
   },
 } as const;

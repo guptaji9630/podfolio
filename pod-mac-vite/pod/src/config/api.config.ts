@@ -3,24 +3,24 @@ import { ENV } from './env.config';
 export const API_ENDPOINTS = {
   // Contact/Mail endpoints
   CONTACT: {
-    SEND: '/contact',
+    SEND: '/api/contact',
   },
   
   // Chat endpoints
   CHAT: {
-    MESSAGE: '/chat',
-    HISTORY: '/chat/history',
+    MESSAGE: '/api/chat',
+    HISTORY: '/api/chat/history',
   },
   
   // Analytics endpoints
   ANALYTICS: {
-    TRACK: '/analytics',
+    TRACK: '/api/analytics',
   },
   
   // Project endpoints (future)
   PROJECTS: {
-    LIST: '/projects',
-    DETAIL: (id: string) => `/projects/${id}`,
+    LIST: '/api/projects',
+    DETAIL: (id: string) => `/api/projects/${id}`,
   },
 } as const;
 

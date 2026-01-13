@@ -3,7 +3,7 @@ import { ENV } from './env.config';
 export const API_ENDPOINTS = {
   // Contact/Mail endpoints
   CONTACT: {
-    SEND: '/contact',
+    SEND: '/api/contact',
   },
   
   // Chat endpoints

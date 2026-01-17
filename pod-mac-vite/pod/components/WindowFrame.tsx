@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { AppWindow } from '../../src/types';
+import { AppWindow } from '../src/types';
 
 interface WindowFrameProps {
   app: AppWindow;

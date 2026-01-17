@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { AppWindow, AppId } from '../../src/types';
+import { AppWindow, AppId } from '../src/types';
 import { WindowFrame } from './WindowFrame';
 import { AboutMe } from './apps/AboutMe';
 import { Finder } from './apps/Finder';

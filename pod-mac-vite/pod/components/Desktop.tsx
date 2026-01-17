@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { AppWindow, AppId } from '../types';
+import { AppWindow, AppId } from '../src/types';
 import { WindowFrame } from './WindowFrame';
 import { AboutMe } from './apps/AboutMe';
 import { Finder } from './apps/Finder';
@@ -21,10 +21,10 @@ interface DesktopProps {
   wallpapers: string[];
 }
 
-export const Desktop: React.FC<DesktopProps> = ({ 
-  windows, 
-  onFocus, 
-  onClose, 
+export const Desktop: React.FC<DesktopProps> = ({
+  windows,
+  onFocus,
+  onClose,
   onMinimize,
   wallpaper,
   setWallpaper,
@@ -47,7 +47,7 @@ export const Desktop: React.FC<DesktopProps> = ({
     <main className="flex-1 relative mt-8 mb-24 overflow-hidden p-4">
       {windows.map((w) => (
         w.isOpen && !w.isMinimized && (
-          <WindowFrame 
+          <WindowFrame
             key={w.id}
             app={w}
             onFocus={() => onFocus(w.id)}

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { AppId, AppWindow } from '../types';
+import type { AppId, AppWindow } from '../src/types';
 
 interface DockProps {
   openApp: (id: AppId) => void;
@@ -26,9 +26,9 @@ export const Dock: React.FC<DockProps> = ({ openApp, activeApp, windows }) => {
           const appState = windows.find(w => w.id === item.id);
           const isOpen = appState?.isOpen;
           const isActive = activeApp === item.id;
-          
+
           return (
-            <button 
+            <button
               key={item.id}
               onClick={() => openApp(item.id)}
               className={`group relative w-12 h-12 rounded-xl ${item.color} flex items-center justify-center hover:-translate-y-4 hover:scale-125 transition-all duration-200 ease-out shadow-lg`}
@@ -36,7 +36,7 @@ export const Dock: React.FC<DockProps> = ({ openApp, activeApp, windows }) => {
               <span className={`material-symbols-outlined ${item.iconColor || 'text-white'} text-[30px] drop-shadow-md`}>
                 {item.icon}
               </span>
-              
+
               <span className="absolute -top-12 opacity-0 group-hover:opacity-100 bg-black/60 backdrop-blur text-white text-[12px] py-1 px-3 rounded-md transition-opacity duration-200 whitespace-nowrap border border-white/10 shadow-lg pointer-events-none">
                 {item.label}
               </span>

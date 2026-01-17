@@ -19,7 +19,12 @@ export const useChat = () => {
   useEffect(() => {
     const savedMessages = storage.get<ChatMessage[]>(KEYS.CHAT_HISTORY);
     if (savedMessages && savedMessages.length > 0) {
-      setMessages(savedMessages);
+      // Convert timestamp strings back to Date objects
+      const messagesWithDates = savedMessages.map(msg => ({
+        ...msg,
+        timestamp: msg.timestamp ? new Date(msg.timestamp) : undefined,
+      }));
+      setMessages(messagesWithDates);
     }
   }, []);
 

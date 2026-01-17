@@ -2,6 +2,9 @@ const STORAGE_KEYS = {
   CHAT_HISTORY: 'portfolio_chat_history',
   THEME_PREFERENCE: 'portfolio_theme',
   WALLPAPER: 'portfolio_wallpaper',
+  WIFI_ENABLED: 'portfolio_wifi_enabled',
+  BLUETOOTH_ENABLED: 'portfolio_bluetooth_enabled',
+  ACCENT_COLOR: 'portfolio_accent_color',
 } as const;
 
 export const storage = {

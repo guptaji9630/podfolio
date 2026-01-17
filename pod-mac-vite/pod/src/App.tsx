@@ -21,6 +21,15 @@ const App: React.FC = () => {
   const [wallpaper, setWallpaper] = useState<string>(
     storage.get(KEYS.WALLPAPER, WALLPAPERS[0]) || WALLPAPERS[0]
   );
+  const [wifiEnabled, setWifiEnabled] = useState<boolean>(
+    storage.get(KEYS.WIFI_ENABLED, true) ?? true
+  );
+  const [bluetoothEnabled, setBluetoothEnabled] = useState<boolean>(
+    storage.get(KEYS.BLUETOOTH_ENABLED, true) ?? true
+  );
+  const [accentColor, setAccentColor] = useState<string>(
+    storage.get(KEYS.ACCENT_COLOR, '#0a84ff') || '#0a84ff'
+  );
 
   const { windows, activeApp, openApp, closeApp, focusApp, minimizeApp } =
     useWindowManager(INITIAL_WINDOWS);
@@ -28,6 +37,21 @@ const App: React.FC = () => {
   const handleWallpaperChange = useCallback((url: string) => {
     setWallpaper(url);
     storage.set(KEYS.WALLPAPER, url);
+  }, []);
+
+  const handleWifiToggle = useCallback((enabled: boolean) => {
+    setWifiEnabled(enabled);
+    storage.set(KEYS.WIFI_ENABLED, enabled);
+  }, []);
+
+  const handleBluetoothToggle = useCallback((enabled: boolean) => {
+    setBluetoothEnabled(enabled);
+    storage.set(KEYS.BLUETOOTH_ENABLED, enabled);
+  }, []);
+
+  const handleAccentColorChange = useCallback((color: string) => {
+    setAccentColor(color);
+    storage.set(KEYS.ACCENT_COLOR, color);
   }, []);
 
   return (
@@ -48,6 +72,12 @@ const App: React.FC = () => {
         wallpaper={wallpaper}
         setWallpaper={handleWallpaperChange}
         wallpapers={WALLPAPERS}
+        wifiEnabled={wifiEnabled}
+        setWifiEnabled={handleWifiToggle}
+        bluetoothEnabled={bluetoothEnabled}
+        setBluetoothEnabled={handleBluetoothToggle}
+        accentColor={accentColor}
+        setAccentColor={handleAccentColorChange}
       />
 
       <Dock openApp={openApp} activeApp={activeApp} windows={windows} />

@@ -19,6 +19,12 @@ interface DesktopProps {
   wallpaper: string;
   setWallpaper: (url: string) => void;
   wallpapers: string[];
+  wifiEnabled: boolean;
+  setWifiEnabled: (enabled: boolean) => void;
+  bluetoothEnabled: boolean;
+  setBluetoothEnabled: (enabled: boolean) => void;
+  accentColor: string;
+  setAccentColor: (color: string) => void;
 }
 
 export const Desktop: React.FC<DesktopProps> = ({
@@ -28,7 +34,13 @@ export const Desktop: React.FC<DesktopProps> = ({
   onMinimize,
   wallpaper,
   setWallpaper,
-  wallpapers
+  wallpapers,
+  wifiEnabled,
+  setWifiEnabled,
+  bluetoothEnabled,
+  setBluetoothEnabled,
+  accentColor,
+  setAccentColor
 }) => {
   const renderAppContent = (id: AppId) => {
     switch (id) {
@@ -37,7 +49,20 @@ export const Desktop: React.FC<DesktopProps> = ({
       case 'mail': return <Mail />;
       case 'resume': return <Resume />;
       case 'chat': return <Chat />;
-      case 'settings': return <Settings wallpaper={wallpaper} setWallpaper={setWallpaper} wallpapers={wallpapers} />;
+      case 'settings': 
+        return (
+          <Settings 
+            wallpaper={wallpaper} 
+            setWallpaper={setWallpaper} 
+            wallpapers={wallpapers}
+            wifiEnabled={wifiEnabled}
+            setWifiEnabled={setWifiEnabled}
+            bluetoothEnabled={bluetoothEnabled}
+            setBluetoothEnabled={setBluetoothEnabled}
+            accentColor={accentColor}
+            setAccentColor={setAccentColor}
+          />
+        );
       case 'terminal': return <Terminal />;
       default: return null;
     }

@@ -22,10 +22,10 @@ const App: React.FC = () => {
     storage.get(KEYS.WALLPAPER, WALLPAPERS[0]) || WALLPAPERS[0]
   );
   const [wifiEnabled, setWifiEnabled] = useState<boolean>(
-    storage.get(KEYS.WIFI_ENABLED, true) ?? true
+    storage.get(KEYS.WIFI_ENABLED, true)
   );
   const [bluetoothEnabled, setBluetoothEnabled] = useState<boolean>(
-    storage.get(KEYS.BLUETOOTH_ENABLED, true) ?? true
+    storage.get(KEYS.BLUETOOTH_ENABLED, true)
   );
   const [accentColor, setAccentColor] = useState<string>(
     storage.get(KEYS.ACCENT_COLOR, '#0a84ff') || '#0a84ff'

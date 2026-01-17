@@ -15,6 +15,12 @@ interface SettingsProps {
 
 type SettingsTab = 'wifi' | 'bluetooth' | 'wallpaper' | 'appearance';
 
+const BLUETOOTH_DEVICES = [
+  { name: 'AirPods Pro', icon: 'headphones', status: 'Connected' },
+  { name: 'Magic Mouse', icon: 'mouse', status: 'Connected' },
+  { name: 'iPhone', icon: 'smartphone', status: 'Paired' },
+] as const;
+
 export const Settings: React.FC<SettingsProps> = ({ 
   wallpaper, 
   setWallpaper, 
@@ -124,11 +130,7 @@ export const Settings: React.FC<SettingsProps> = ({
                     <p className="text-[11px] font-medium text-white/40 mb-3 uppercase tracking-wider">
                       Nearby Devices
                     </p>
-                    {[
-                      { name: 'AirPods Pro', icon: 'headphones', status: 'Connected' },
-                      { name: 'Magic Mouse', icon: 'mouse', status: 'Connected' },
-                      { name: 'iPhone', icon: 'smartphone', status: 'Paired' },
-                    ].map((device, i) => (
+                    {BLUETOOTH_DEVICES.map((device, i) => (
                       <div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
                         <span className="material-symbols-outlined text-primary">{device.icon}</span>
                         <div className="flex-1">
@@ -169,7 +171,7 @@ export const Settings: React.FC<SettingsProps> = ({
                           : 'hover:scale-[1.02]'
                       }`}
                     >
-                      <img src={url} className="w-full h-full object-cover" alt={`Wallpaper ${i + 1}`} />
+                      <img src={url} className="w-full h-full object-cover" alt="" />
                       <div className={`absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors`} />
                       {wallpaper === url && (
                         <div className="absolute bottom-2 right-2 bg-primary w-6 h-6 rounded-full flex items-center justify-center shadow-lg">

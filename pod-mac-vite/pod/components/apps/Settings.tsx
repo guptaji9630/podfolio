@@ -75,7 +75,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   >
                     <div
                       className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                        wifiEnabled ? 'translate-x-6' : 'translate-x-0'
+                        wifiEnabled ? 'translate-x-[22px]' : 'translate-x-0'
                       }`}
                     />
                   </button>
@@ -120,7 +120,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   >
                     <div
                       className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                        bluetoothEnabled ? 'translate-x-6' : 'translate-x-0'
+                        bluetoothEnabled ? 'translate-x-[22px]' : 'translate-x-0'
                       }`}
                     />
                   </button>

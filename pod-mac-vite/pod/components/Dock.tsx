@@ -20,7 +20,7 @@ export const Dock: React.FC<DockProps> = ({ openApp, activeApp, windows }) => {
   ];
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[1000]">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/4 z-[1000]">
       <div className="dock-glass flex items-end gap-3 px-3 py-2.5 rounded-[24px] shadow-2xl h-[72px] transition-all duration-300 ease-out hover:px-6">
         {dockItems.map((item) => {
           const appState = windows.find(w => w.id === item.id);

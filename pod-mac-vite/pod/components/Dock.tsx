@@ -1,6 +1,6 @@
 
 import React from 'react';
-import type { AppId, AppWindow } from '../../src/types';
+import type { AppId, AppWindow } from '../src/types';
 
 interface DockProps {
   openApp: (id: AppId) => void;

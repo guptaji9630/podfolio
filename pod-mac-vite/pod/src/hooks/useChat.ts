@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { ChatMessage } from '../types';
 import { chatService } from '../services/chatService';
+import { toolExecutor } from '../services/toolExecutor';
 import { storage, KEYS } from '../utils/storage';
 
 const INITIAL_MESSAGE: ChatMessage = {
@@ -66,6 +67,28 @@ export const useChat = () => {
     };
 
     setMessages(prev => [...prev, assistantMessage]);
+
+    // Execute tool calls if present
+    if (response.toolCalls && response.toolCalls.length > 0) {
+      const toolResultMessages: ChatMessage[] = [];
+      
+      for (const toolCall of response.toolCalls) {
+        const toolResult = await toolExecutor.execute(toolCall);
+        
+        // Collect tool result message
+        toolResultMessages.push({
+          role: 'assistant',
+          content: toolResult.success 
+            ? toolResult.message || 'Action completed successfully'
+            : `Error: ${toolResult.error || 'Action failed'}`,
+          timestamp: new Date(),
+        });
+      }
+      
+      // Add all tool result messages at once
+      setMessages(prev => [...prev, ...toolResultMessages]);
+    }
+
     setIsTyping(false);
   }, [input, isTyping, messages]);
 

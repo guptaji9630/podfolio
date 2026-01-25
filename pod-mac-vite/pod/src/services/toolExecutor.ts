@@ -1,5 +1,6 @@
 import { mailService } from './mailService';
 import { ToolCall } from '../types';
+import { CONTACT_EMAIL } from '../config/constants';
 
 /**
  * Tool Executor - Handles execution of AI tool calls
@@ -38,6 +39,7 @@ export class ToolExecutor {
 
       // Call the mail service
       const result = await mailService.sendContactEmail({
+        to: CONTACT_EMAIL,
         subject,
         message,
         senderName,

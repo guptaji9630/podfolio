@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { ChatMessage } from '../types';
 import { chatService } from '../services/chatService';
+import { toolExecutor } from '../services/toolExecutor';
 import { storage, KEYS } from '../utils/storage';
 
 const INITIAL_MESSAGE: ChatMessage = {
@@ -66,6 +67,25 @@ export const useChat = () => {
     };
 
     setMessages(prev => [...prev, assistantMessage]);
+
+    // Execute tool calls if present
+    if (response.toolCalls && response.toolCalls.length > 0) {
+      for (const toolCall of response.toolCalls) {
+        const toolResult = await toolExecutor.execute(toolCall);
+        
+        // Add tool result as a system message
+        const toolResultMessage: ChatMessage = {
+          role: 'assistant',
+          content: toolResult.success 
+            ? toolResult.message || 'Action completed successfully'
+            : `Error: ${toolResult.error || 'Action failed'}`,
+          timestamp: new Date(),
+        };
+        
+        setMessages(prev => [...prev, toolResultMessage]);
+      }
+    }
+
     setIsTyping(false);
   }, [input, isTyping, messages]);
 

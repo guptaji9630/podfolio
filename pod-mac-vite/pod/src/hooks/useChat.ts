@@ -70,20 +70,23 @@ export const useChat = () => {
 
     // Execute tool calls if present
     if (response.toolCalls && response.toolCalls.length > 0) {
+      const toolResultMessages: ChatMessage[] = [];
+      
       for (const toolCall of response.toolCalls) {
         const toolResult = await toolExecutor.execute(toolCall);
         
-        // Add tool result as a system message
-        const toolResultMessage: ChatMessage = {
+        // Collect tool result message
+        toolResultMessages.push({
           role: 'assistant',
           content: toolResult.success 
             ? toolResult.message || 'Action completed successfully'
             : `Error: ${toolResult.error || 'Action failed'}`,
           timestamp: new Date(),
-        };
-        
-        setMessages(prev => [...prev, toolResultMessage]);
+        });
       }
+      
+      // Add all tool result messages at once
+      setMessages(prev => [...prev, ...toolResultMessages]);
     }
 
     setIsTyping(false);

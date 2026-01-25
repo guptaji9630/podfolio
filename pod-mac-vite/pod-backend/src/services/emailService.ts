@@ -39,7 +39,7 @@ export class EmailService {
       const result = await resend.emails.send({
         from: 'Portfolio Contact <onboarding@resend.dev>', // Update with your verified domain
         to: data.to,
-        reply_to: data.senderEmail || undefined,
+        reply_to: data.senderEmail,
         subject: `Portfolio Contact: ${data.subject}`,
         html,
       });

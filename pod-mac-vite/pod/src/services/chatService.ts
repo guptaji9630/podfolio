@@ -82,20 +82,14 @@ export class ChatService {
     try {
       const lastMessage = messages[messages.length - 1];
       
-      const config: any = {
-        model: 'gemini-2.0-flash-exp',
+      // Use gemini-2.5-flash - latest stable Gemini model
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
         contents: lastMessage.content,
         config: {
           systemInstruction: SYSTEM_INSTRUCTION,
-        },
-      };
-
-      // Add tools if enabled
-      if (enableTools) {
-        config.tools = this.formatToolsForGemini();
-      }
-
-      const response = await this.ai.models.generateContent(config);
+        }
+      });
       
       const responseText = response.text || "I'm sorry, I couldn't process that request.";
 
@@ -108,9 +102,25 @@ export class ChatService {
       };
     } catch (error: any) {
       console.error('Chat service error:', error);
+      
+      // Return user-friendly messages without exposing technical errors
+      const errorMsg = error.message || '';
+      
+      if (errorMsg.includes('API key expired') || errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('INVALID_ARGUMENT')) {
+        return {
+          message: "🔑 The AI service is temporarily unavailable. Please contact the administrator to renew the API key.",
+        };
+      }
+      
+      if (errorMsg.includes('not found') || errorMsg.includes('NOT_FOUND')) {
+        return {
+          message: "I'm experiencing technical difficulties. Please try again in a moment.",
+        };
+      }
+      
+      // Generic friendly error message
       return {
-        message: "I'm having trouble connecting right now. Please try again.",
-        error: error.message,
+        message: "I apologize, but I'm having trouble processing your request right now. Please try again.",
       };
     }
   }

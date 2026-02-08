@@ -146,7 +146,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
 
       {/* Title Bar */}
       <div
-        className="h-10 bg-[#2c2c2e]/60 border-b border-black/40 flex items-center px-4 shrink-0 cursor-default select-none relative z-50"
+        className="h-10 bg-[#2c2c2e]/60 border-b border-black/40 flex items-center px-4 shrink-0 cursor-move select-none relative z-50"
         onMouseDown={handleMouseDown}
       >
         <div className="flex items-center gap-2 absolute left-4">

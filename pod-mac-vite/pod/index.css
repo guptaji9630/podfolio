@@ -3,7 +3,7 @@
 
 /* Custom theme configuration */
 @theme {
-  --color-primary: #007aff;
+  --color-primary: var(--accent-color, #007aff);
   --color-secondary: #5856d6;
   --color-success: #34c759;
   --color-warning: #ff9500;

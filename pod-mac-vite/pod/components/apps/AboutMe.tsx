@@ -19,12 +19,12 @@ export const AboutMe: React.FC = () => {
           </div>
           <div className="pt-0 md:pt-1 flex-1">
             <h1 className="text-xl md:text-2xl lg:text-4xl font-bold tracking-tight text-white mb-1">Hello, I'm Abhishek</h1>
-            <p className="text-sm md:text-base lg:text-lg text-blue-400 font-medium mb-2 md:mb-3">Software Engineer & Tester</p>
+            <p className="text-sm md:text-base lg:text-lg text-blue-400 font-medium mb-2 md:mb-3">Quality Assurance Engineer | Software Tester</p>
             <p className="text-gray-400 max-w-xl leading-relaxed text-xs md:text-sm mb-3 md:mb-4 font-light mx-auto md:mx-0">
-               I am a software engineer with a strong background in testing and quality assurance. I have experience in developing and maintaining software applications, and I am passionate about creating innovative and user-friendly solutions.
+              Dedicated Quality Assurance Engineer with hands-on experience in manual and automated testing. Skilled in identifying bugs, ensuring product quality, and improving testing processes. Strong background in software development with expertise in MERN stack and testing frameworks like Jest and Playwright.
             </p>
             <div className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">
-              {['UI/UX', 'React', 'Tailwind', 'Node.js'].map(tag => (
+              {['QA Testing', 'Automation', 'Jest', 'Playwright', 'React', 'Node.js'].map(tag => (
                 <span key={tag} className="px-2 py-0.5 rounded text-[9px] md:text-[10px] font-medium bg-[#3a3a3c] border border-white/10 text-gray-300 shadow-sm">
                   {tag}
                 </span>
@@ -36,9 +36,9 @@ export const AboutMe: React.FC = () => {
 
       <div className="p-3 md:p-4 lg:p-6 grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-3 lg:gap-4">
         {[
-          { icon: 'calendar_month', label: 'Experience', value: '2 Years', color: 'bg-blue-500/20 text-blue-400' },
-          { icon: 'rocket_launch', label: 'Shipped', value: '3+ Projects', color: 'bg-purple-500/20 text-purple-400' },
-          { icon: 'sentiment_satisfied', label: 'Clients', value: '2+ Happy', color: 'bg-emerald-500/20 text-emerald-400' },
+          { icon: 'calendar_month', label: 'Experience', value: '1+ Year', color: 'bg-blue-500/20 text-blue-400' },
+          { icon: 'bug_report', label: 'Tests Run', value: '500+ Cases', color: 'bg-purple-500/20 text-purple-400' },
+          { icon: 'verified', label: 'Projects', value: '5+ Tested', color: 'bg-emerald-500/20 text-emerald-400' },
         ].map(stat => (
           <div key={stat.label} className="bg-[#2c2c2e]/60 border border-white/5 p-3 md:p-4 rounded-lg md:rounded-xl hover:bg-[#3a3a3c]/60 transition-colors cursor-default backdrop-blur-sm shadow-sm flex sm:flex-col items-center sm:items-start gap-3 md:gap-4 sm:gap-0">
             <div className="flex items-center gap-2 md:gap-3 mb-0 sm:mb-2">
@@ -61,15 +61,15 @@ export const AboutMe: React.FC = () => {
           <div className="flex gap-3 md:gap-4 items-start">
             <div className="w-1 h-8 md:h-10 bg-blue-500 rounded-full shrink-0" />
             <div>
-              <p className="text-xs md:text-sm text-white font-medium">Released Version 2.0 of Fintech Dashboard</p>
-              <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 uppercase">3 days ago • Web Dev</p>
+              <p className="text-xs md:text-sm text-white font-medium">Testing Trail Management System at Agmatix</p>
+              <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 uppercase">Current • QA Testing</p>
             </div>
           </div>
           <div className="flex gap-3 md:gap-4 items-start">
             <div className="w-1 h-8 md:h-10 bg-purple-500 rounded-full shrink-0" />
             <div>
-              <p className="text-xs md:text-sm text-white font-medium">Started new branding for Coffee Roasters</p>
-              <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 uppercase">1 week ago • Brand Identity</p>
+              <p className="text-xs md:text-sm text-white font-medium">Developed FitForge Fitness Tracker with MERN Stack</p>
+              <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 uppercase">2025 • Full Stack Development</p>
             </div>
           </div>
         </div>

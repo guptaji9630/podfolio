@@ -127,29 +127,65 @@ export class ChatService {
 
   private formatToolsForGemini(): any[] {
     // Format tools according to Gemini's function calling specification
-    return AI_TOOLS.map(tool => ({
-      functionDeclarations: [{
+    const functionDeclarations = AI_TOOLS.map(tool => {
+      // Convert our parameters format to Gemini's expected format
+      const properties: Record<string, any> = {};
+      const required: string[] = [];
+
+      Object.entries(tool.parameters).forEach(([key, param]) => {
+        properties[key] = {
+          type: param.type,
+          description: param.description,
+        };
+        if (param.required) {
+          required.push(key);
+        }
+      });
+
+      return {
         name: tool.name,
         description: tool.description,
         parameters: {
           type: 'object',
-          properties: tool.parameters,
+          properties,
+          required: required.length > 0 ? required : undefined,
         },
-      }],
-    }));
+      };
+    });
+
+    return [{
+      functionDeclarations,
+    }];
   }
 
   private extractToolCalls(response: any): any[] {
     // Extract tool/function calls from Gemini response
-    // This will depend on Gemini's response format
-    // Placeholder implementation
-    if (response.functionCalls) {
-      return response.functionCalls.map((call: any) => ({
-        name: call.name,
-        arguments: call.args,
-      }));
+    try {
+      // Gemini response structure for function calls
+      const candidates = response.candidates || [];
+      if (candidates.length === 0) return [];
+
+      const firstCandidate = candidates[0];
+      const content = firstCandidate.content;
+      
+      if (!content || !content.parts) return [];
+
+      const functionCalls: any[] = [];
+      
+      for (const part of content.parts) {
+        if (part.functionCall) {
+          functionCalls.push({
+            name: part.functionCall.name,
+            arguments: part.functionCall.args || {},
+          });
+        }
+      }
+
+      return functionCalls;
+    } catch (error) {
+      console.error('Error extracting tool calls:', error);
+      return [];
     }
-    return [];
   }
 }
 

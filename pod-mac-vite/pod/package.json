@@ -10,11 +10,14 @@
   },
   "dependencies": {
     "@google/genai": "^1.35.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.1.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.18",
+    "@types/html2canvas": "^0.5.35",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.23",

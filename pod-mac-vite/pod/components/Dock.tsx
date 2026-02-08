@@ -15,7 +15,7 @@ export const Dock: React.FC<DockProps> = ({ openApp, activeApp, windows }) => {
     { id: 'chat' as AppId, icon: 'smart_toy', label: 'AI Assistant', color: 'bg-gradient-to-tr from-cyan-500 to-blue-500', iconColor: 'text-white' },
     { id: 'mail' as AppId, icon: 'mail', label: 'Mail', color: 'bg-sky-500', badge: 1, iconColor: 'text-white' },
     { id: 'terminal' as AppId, icon: 'terminal', label: 'Terminal', color: 'bg-gray-800', iconColor: 'text-white' },
-    // { id: 'resume' as AppId, icon: 'description', label: 'Resume', color: 'bg-white', iconColor: 'text-gray-800' },
+    { id: 'resume' as AppId, icon: 'description', label: 'Resume', color: 'bg-white', iconColor: 'text-gray-800' },
     { id: 'settings' as AppId, icon: 'settings', label: 'Settings', color: 'bg-gray-400', iconColor: 'text-white' },
   ];
 

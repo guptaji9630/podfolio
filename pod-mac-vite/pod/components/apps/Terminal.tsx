@@ -31,11 +31,11 @@ export const Terminal: React.FC = () => {
 
   return (
     <div 
-      className="flex-1 bg-black/95 p-4 font-mono text-sm overflow-y-auto cursor-text" 
+      className="flex-1 bg-black/95 p-3 md:p-4 font-mono text-xs md:text-sm overflow-y-auto cursor-text" 
       onClick={() => inputRef.current?.focus()}
     >
       <div className="mb-2">
-        {history.map((l, i) => <div key={i} className="text-gray-300 mb-0.5 whitespace-pre-wrap">{l}</div>)}
+        {history.map((l, i) => <div key={i} className="text-gray-300 mb-0.5 whitespace-pre-wrap break-all">{l}</div>)}
       </div>
       <form onSubmit={handleCmd} className="flex gap-2">
         <span className="text-green-500 font-bold shrink-0">➜</span>
@@ -43,7 +43,7 @@ export const Terminal: React.FC = () => {
         <input 
           ref={inputRef}
           autoFocus 
-          className="bg-transparent border-none outline-none flex-1 text-white caret-primary" 
+          className="bg-transparent border-none outline-none flex-1 text-white caret-primary min-w-0" 
           value={input} 
           onChange={e => setInput(e.target.value)} 
           spellCheck="false" 

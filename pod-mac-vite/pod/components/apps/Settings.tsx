@@ -38,7 +38,7 @@ export const Settings: React.FC<SettingsProps> = ({
     { id: 'wifi' as const, label: 'Wi-Fi', icon: 'wifi', color: 'bg-blue-500' },
     { id: 'bluetooth' as const, label: 'Bluetooth', icon: 'bluetooth', color: 'bg-blue-600' },
     { id: 'wallpaper' as const, label: 'Wallpaper', icon: 'image', color: 'bg-sky-500' },
-    { id: 'appearance' as const, label: 'Appearance', icon: 'visibility', color: 'bg-primary' },
+    // { id: 'appearance' as const, label: 'Appearance', icon: 'visibility', color: 'bg-primary' },
   ];
 
   const accentColors = [
@@ -55,10 +55,10 @@ export const Settings: React.FC<SettingsProps> = ({
       case 'wifi':
         return (
           <>
-            <div className="sticky top-0 z-10 p-8 backdrop-blur-md">
+            <div className="sticky top-0 z-10 p-4 md:p-8 backdrop-blur-md">
               <h1 className="text-xl font-bold text-white">Wi-Fi</h1>
             </div>
-            <div className="px-8 pb-10 flex flex-col gap-6">
+            <div className="px-4 md:px-8 pb-10 flex flex-col gap-6">
               <section className="bg-white/5 rounded-xl border border-white/5 p-5">
                 <div className="flex justify-between items-center mb-6">
                   <div className="flex flex-col">
@@ -75,7 +75,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   >
                     <div
                       className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                        wifiEnabled ? 'translate-x-[24px]' : 'translate-x-0'
+                        wifiEnabled ? 'translate-x-[14px]' : 'translate-x-0'
                       }`}
                     />
                   </button>
@@ -100,10 +100,10 @@ export const Settings: React.FC<SettingsProps> = ({
       case 'bluetooth':
         return (
           <>
-            <div className="sticky top-0 z-10 p-8 backdrop-blur-md">
+            <div className="sticky top-0 z-10 p-4 md:p-8 backdrop-blur-md">
               <h1 className="text-xl font-bold text-white">Bluetooth</h1>
             </div>
-            <div className="px-8 pb-10 flex flex-col gap-6">
+            <div className="px-4 md:px-8 pb-10 flex flex-col gap-6">
               <section className="bg-white/5 rounded-xl border border-white/5 p-5">
                 <div className="flex justify-between items-center mb-6">
                   <div className="flex flex-col">
@@ -120,7 +120,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   >
                     <div
                       className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                        bluetoothEnabled ? 'translate-x-[24px]' : 'translate-x-0'
+                        bluetoothEnabled ? 'translate-x-[14px]' : 'translate-x-0'
                       }`}
                     />
                   </button>
@@ -152,15 +152,15 @@ export const Settings: React.FC<SettingsProps> = ({
       case 'wallpaper':
         return (
           <>
-            <div className="sticky top-0 z-10 p-8 backdrop-blur-md">
+            <div className="sticky top-0 z-10 p-4 md:p-8 backdrop-blur-md">
               <h1 className="text-xl font-bold text-white">Wallpaper</h1>
             </div>
-            <div className="px-8 pb-10 flex flex-col gap-8">
+            <div className="px-4 md:px-8 pb-10 flex flex-col gap-6 md:gap-8">
               <section>
                 <p className="text-[11px] font-medium text-white/40 mb-4 uppercase tracking-wider">
                   Dynamic Wallpapers
                 </p>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {wallpapers.map((url, i) => (
                     <div
                       key={i}
@@ -189,15 +189,15 @@ export const Settings: React.FC<SettingsProps> = ({
       case 'appearance':
         return (
           <>
-            <div className="sticky top-0 z-10 p-8 backdrop-blur-md">
+            <div className="sticky top-0 z-10 p-4 md:p-8 backdrop-blur-md">
               <h1 className="text-xl font-bold text-white">Appearance</h1>
             </div>
-            <div className="px-8 pb-10 flex flex-col gap-8">
+            <div className="px-4 md:px-8 pb-10 flex flex-col gap-6 md:gap-8">
               <section>
                 <p className="text-[11px] font-medium text-white/40 mb-4 uppercase tracking-wider">
                   Accent Color
                 </p>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
                   {accentColors.map((color) => (
                     <button
                       key={color.value}
@@ -238,12 +238,12 @@ export const Settings: React.FC<SettingsProps> = ({
 
   return (
     <div className="flex flex-1 overflow-hidden">
-      <div className="w-64 bg-black/20 border-r border-white/10 flex flex-col pt-4 px-4 gap-4 shrink-0">
-        <div className="flex items-center gap-3 px-3 py-3 mb-4 rounded-lg bg-white/5 cursor-pointer hover:bg-white/10 transition-colors">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border border-white/10 flex items-center justify-center">
+      <div className="w-16 md:w-64 bg-black/20 border-r border-white/10 flex flex-col pt-4 px-2 md:px-4 gap-4 shrink-0">
+        <div className="flex items-center gap-3 px-2 md:px-3 py-3 mb-4 rounded-lg bg-white/5 cursor-pointer hover:bg-white/10 transition-colors">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border border-white/10 flex items-center justify-center shrink-0">
             <span className="material-symbols-outlined text-white text-[20px]">person</span>
           </div>
-          <div className="flex flex-col">
+          <div className="hidden md:flex flex-col">
             <span className="text-white text-sm font-medium leading-tight">Visitor</span>
             <span className="text-white/40 text-xs">Apple ID</span>
           </div>
@@ -254,14 +254,15 @@ export const Settings: React.FC<SettingsProps> = ({
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex items-center gap-3 px-3 py-1.5 rounded-lg text-left transition-colors ${
+              className={`flex items-center justify-center md:justify-start gap-3 px-2 md:px-3 py-1.5 rounded-lg text-left transition-colors ${
                 activeTab === item.id ? 'bg-primary/20 text-white' : 'hover:bg-white/5 text-white/90'
               }`}
+              title={item.label}
             >
-              <div className={`${item.color} w-6 h-6 flex items-center justify-center rounded-md shadow-sm`}>
+              <div className={`${item.color} w-6 h-6 flex items-center justify-center rounded-md shadow-sm shrink-0`}>
                 <span className="material-symbols-outlined text-[14px] text-white">{item.icon}</span>
               </div>
-              <span className="text-[13px] font-medium">{item.label}</span>
+              <span className="hidden md:inline text-[13px] font-medium">{item.label}</span>
             </button>
           ))}
         </nav>

@@ -57,7 +57,10 @@ const App: React.FC = () => {
   return (
     <div
       className="h-screen w-screen bg-cover bg-center relative overflow-hidden flex flex-col transition-all duration-1000"
-      style={{ backgroundImage: `url('${wallpaper}')` }}
+      style={{ 
+        backgroundImage: `url('${wallpaper}')`,
+        '--accent-color': accentColor,
+      } as React.CSSProperties & { '--accent-color': string }}
     >
       <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px] pointer-events-none" />
 

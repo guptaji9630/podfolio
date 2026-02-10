@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AppWindow } from '../src/types';
+import { Z_INDEX } from '../src/config/zIndex';
 
 interface WindowFrameProps {
   app: AppWindow;
@@ -36,8 +37,8 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
   });
 
   const [position, setPosition] = useState({
-    x: 40 + (app.zIndex * 5),
-    y: 40 + (app.zIndex * 5)
+    x: 40 + ((app.zIndex - Z_INDEX.WINDOW_BASE) * 5),
+    y: 40 + ((app.zIndex - Z_INDEX.WINDOW_BASE) * 5)
   });
 
   const [isDragging, setIsDragging] = useState(false);

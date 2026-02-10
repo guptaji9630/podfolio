@@ -36,8 +36,8 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
   });
 
   const [position, setPosition] = useState({
-    x: 40 + (app.zIndex * 5),
-    y: 40 + (app.zIndex * 5)
+    x: 40 + ((app.zIndex - 100) * 5),
+    y: 40 + ((app.zIndex - 100) * 5)
   });
 
   const [isDragging, setIsDragging] = useState(false);

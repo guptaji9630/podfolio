@@ -9,6 +9,7 @@ import { storage, KEYS } from './utils/storage';
 import { Z_INDEX } from './config/zIndex';
 
 const INITIAL_WINDOWS: AppWindow[] = [
+  // About window opens by default, so give it a higher z-index to appear on top
   { id: 'about', title: 'About Abhishek', isOpen: true, isMinimized: false, zIndex: Z_INDEX.WINDOW_BASE + 9 },
   { id: 'chat', title: 'AI Assistant', isOpen: false, isMinimized: false, zIndex: Z_INDEX.WINDOW_BASE },
   { id: 'finder', title: 'Finder', isOpen: false, isMinimized: false, zIndex: Z_INDEX.WINDOW_BASE },

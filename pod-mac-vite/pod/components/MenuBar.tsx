@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { Z_INDEX } from '../src/config/zIndex';
 
 interface MenuBarProps {
   activeAppTitle: string;
@@ -23,7 +24,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({ activeAppTitle }) => {
   });
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-3 md:px-4 py-1 bg-black/30 backdrop-blur-md border-b border-white/5 text-[12px] md:text-[13px] font-medium h-7 md:h-8 select-none">
+    <div className="fixed top-0 left-0 right-0 flex items-center justify-between px-3 md:px-4 py-1 bg-black/30 backdrop-blur-md border-b border-white/5 text-[12px] md:text-[13px] font-medium h-7 md:h-8 select-none" style={{ zIndex: Z_INDEX.HEADER }}>
       <div className="flex items-center gap-3 md:gap-5">
         <button className="flex items-center justify-center text-white hover:text-gray-200">
           <span className="material-symbols-outlined text-[16px] md:text-[18px] font-bold">token</span>

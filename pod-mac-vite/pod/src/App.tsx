@@ -6,15 +6,16 @@ import type { AppWindow } from './types';
 import { useWindowManager } from './hooks/useWindowManager';
 import { WALLPAPERS } from './config/constants';
 import { storage, KEYS } from './utils/storage';
+import { Z_INDEX } from './config/zIndex';
 
 const INITIAL_WINDOWS: AppWindow[] = [
-  { id: 'about', title: 'About Abhishek', isOpen: true, isMinimized: false, zIndex: 110 },
-  { id: 'chat', title: 'AI Assistant', isOpen: false, isMinimized: false, zIndex: 101 },
-  { id: 'finder', title: 'Finder', isOpen: false, isMinimized: false, zIndex: 101 },
-  { id: 'mail', title: 'Mail', isOpen: false, isMinimized: false, zIndex: 101 },
-  { id: 'resume', title: 'Resume.pdf', isOpen: false, isMinimized: false, zIndex: 101 },
-  { id: 'settings', title: 'System Settings', isOpen: false, isMinimized: false, zIndex: 101 },
-  { id: 'terminal', title: 'Terminal', isOpen: false, isMinimized: false, zIndex: 101 },
+  { id: 'about', title: 'About Abhishek', isOpen: true, isMinimized: false, zIndex: Z_INDEX.WINDOW_BASE + 9 },
+  { id: 'chat', title: 'AI Assistant', isOpen: false, isMinimized: false, zIndex: Z_INDEX.WINDOW_BASE },
+  { id: 'finder', title: 'Finder', isOpen: false, isMinimized: false, zIndex: Z_INDEX.WINDOW_BASE },
+  { id: 'mail', title: 'Mail', isOpen: false, isMinimized: false, zIndex: Z_INDEX.WINDOW_BASE },
+  { id: 'resume', title: 'Resume.pdf', isOpen: false, isMinimized: false, zIndex: Z_INDEX.WINDOW_BASE },
+  { id: 'settings', title: 'System Settings', isOpen: false, isMinimized: false, zIndex: Z_INDEX.WINDOW_BASE },
+  { id: 'terminal', title: 'Terminal', isOpen: false, isMinimized: false, zIndex: Z_INDEX.WINDOW_BASE },
 ];
 
 const App: React.FC = () => {

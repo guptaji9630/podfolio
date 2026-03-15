@@ -7,10 +7,22 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
   return value || '';
 };
 
+const getNimApiUrl = (): string => {
+  const configured = getEnvVar('VITE_NVIDIA_NIM_API_URL', '/nim-api/chat/completions');
+
+  // In dev, force local proxy path to avoid browser CORS failures.
+  if (import.meta.env.DEV && /^https?:\/\//i.test(configured)) {
+    return '/nim-api/chat/completions';
+  }
+
+  return configured;
+};
+
 export const ENV = {
   // API Configuration
   API_BASE_URL: getEnvVar('VITE_API_BASE_URL', 'http://localhost:3002/api'),
-  GEMINI_API_KEY: getEnvVar('VITE_GEMINI_API_KEY'),
+  NVIDIA_NIM_API_URL: getNimApiUrl(),
+  NVIDIA_NIM_MODEL: getEnvVar('VITE_NVIDIA_NIM_MODEL', 'meta/llama-4-maverick-17b-128e-instruct'),
   
   // Feature Flags
   ENABLE_ANALYTICS: getEnvVar('VITE_ENABLE_ANALYTICS', 'false') === 'true',
@@ -24,8 +36,3 @@ export const ENV = {
   IS_DEV: import.meta.env.DEV,
   IS_PROD: import.meta.env.PROD,
 } as const;
-
-// Validation - throw error if critical env vars are missing in production
-if (ENV.IS_PROD && !ENV.GEMINI_API_KEY) {
-  throw new Error('VITE_GEMINI_API_KEY is required in production');
-}

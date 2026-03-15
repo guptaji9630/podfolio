@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import axios from 'axios';
 import { ENV } from '../config/env.config';
 import { ChatMessage, ChatApiResponse, AITool } from '../types';
 
@@ -121,96 +121,183 @@ Be helpful, practical, and slightly witty.
 Keep responses concise like a chat message — no unnecessary lectures, just clear, actionable guidance.`;
 
 export class ChatService {
-  private ai: any;
-
-  constructor() {
-    if (ENV.GEMINI_API_KEY) {
-      this.ai = new GoogleGenAI({ apiKey: ENV.GEMINI_API_KEY });
-    }
-  }
+  constructor() {}
 
   async sendMessage(
     messages: ChatMessage[],
     enableTools: boolean = ENV.ENABLE_AI_TOOLS
   ): Promise<ChatApiResponse> {
-    if (!this.ai) {
-      return {
-        message: "AI service is not configured. Please check your API key.",
-        error: 'MISSING_API_KEY',
-      };
-    }
-
     try {
-      const lastMessage = messages[messages.length - 1];
-      
-      // Use gemini-2.5-flash - latest stable Gemini model
-      const response = await this.ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: lastMessage.content,
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
-        }
-      });
-      
-      const responseText = response.text || "I'm sorry, I couldn't process that request.";
+      const firstPass = await this.requestCompletion(messages, enableTools);
 
-      // Check for tool calls in response
-      const toolCalls = this.extractToolCalls(response);
+      // Some models return function call JSON as plain text content.
+      // If that happens, retry without tools so user gets a natural-language reply.
+      const needsPlainTextRetry =
+        firstPass.responseText.length === 0 || this.looksLikeFunctionPayload(firstPass.responseText);
+
+      const finalResponse = needsPlainTextRetry
+        ? await this.requestCompletion(messages, false)
+        : firstPass;
 
       return {
-        message: responseText,
-        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+        message: finalResponse.responseText || "I'm sorry, I couldn't process that request.",
+        toolCalls: finalResponse.toolCalls.length > 0 ? finalResponse.toolCalls : undefined,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Chat service error:', error);
-      
-      // Return user-friendly messages without exposing technical errors
-      const errorMsg = error.message || '';
-      
-      if (errorMsg.includes('API key expired') || errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('INVALID_ARGUMENT')) {
+
+      const errorMsg = axios.isAxiosError(error)
+        ? String(error.response?.data?.error?.message || error.message || '')
+        : String((error as { message?: string })?.message || '');
+
+      if (errorMsg.includes('invalid') || errorMsg.includes('unauthorized') || errorMsg.includes('401')) {
         return {
-          message: "🔑 The AI service is temporarily unavailable. Please contact the administrator to renew the API key.",
+          message: "The AI service is temporarily unavailable. Please contact the administrator to renew the API key.",
         };
       }
-      
-      if (errorMsg.includes('not found') || errorMsg.includes('NOT_FOUND')) {
+
+      if (errorMsg.includes('not found') || errorMsg.includes('404')) {
         return {
           message: "I'm experiencing technical difficulties. Please try again in a moment.",
         };
       }
-      
-      // Generic friendly error message
+
       return {
         message: "I apologize, but I'm having trouble processing your request right now. Please try again.",
       };
     }
   }
 
-  private formatToolsForGemini(): any[] {
-    // Format tools according to Gemini's function calling specification
-    return AI_TOOLS.map(tool => ({
-      functionDeclarations: [{
-        name: tool.name,
-        description: tool.description,
-        parameters: {
-          type: 'object',
-          properties: tool.parameters,
+  private async requestCompletion(
+    messages: ChatMessage[],
+    enableTools: boolean
+  ): Promise<{ responseText: string; toolCalls: Array<{ name: string; arguments: Record<string, any> }> }> {
+    const response = await axios.post(
+      ENV.NVIDIA_NIM_API_URL,
+      {
+        model: ENV.NVIDIA_NIM_MODEL,
+        messages: this.buildNimMessages(messages),
+        max_tokens: 512,
+        temperature: 1,
+        top_p: 1,
+        frequency_penalty: 0,
+        presence_penalty: 0,
+        stream: false,
+        ...(enableTools ? { tools: this.formatToolsForNim() } : {}),
+      },
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
         },
-      }],
-    }));
+        responseType: 'json',
+      }
+    );
+
+    const assistantMessage = response.data?.choices?.[0]?.message;
+    const responseText = String(assistantMessage?.content || '').trim();
+    const toolCalls = this.extractToolCalls(assistantMessage?.tool_calls);
+
+    return { responseText, toolCalls };
   }
 
-  private extractToolCalls(response: any): any[] {
-    // Extract tool/function calls from Gemini response
-    // This will depend on Gemini's response format
-    // Placeholder implementation
-    if (response.functionCalls) {
-      return response.functionCalls.map((call: any) => ({
-        name: call.name,
-        arguments: call.args,
-      }));
+  private looksLikeFunctionPayload(content: string): boolean {
+    if (!content) {
+      return false;
     }
-    return [];
+
+    const trimmed = content.trim();
+
+    if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
+      return false;
+    }
+
+    try {
+      const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+      const type = parsed?.type;
+      const name = parsed?.name;
+      return type === 'function' && typeof name === 'string' && name.length > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  private buildNimMessages(messages: ChatMessage[]): Array<{ role: 'system' | 'user' | 'assistant'; content: string }> {
+    return [
+      { role: 'system', content: SYSTEM_INSTRUCTION },
+      ...messages.map(message => ({
+        role: message.role,
+        content: message.content,
+      })),
+    ];
+  }
+
+  private formatToolsForNim(): Array<{
+    type: 'function';
+    function: {
+      name: string;
+      description: string;
+      parameters: {
+        type: 'object';
+        properties: Record<string, { type: string; description: string }>;
+        required?: string[];
+      };
+    };
+  }> {
+    return AI_TOOLS.map(tool => {
+      const properties = Object.fromEntries(
+        Object.entries(tool.parameters).map(([name, config]) => [
+          name,
+          {
+            type: config.type,
+            description: config.description,
+          },
+        ])
+      );
+
+      const required = Object.entries(tool.parameters)
+        .filter(([, config]) => config.required)
+        .map(([name]) => name);
+
+      return {
+        type: 'function',
+        function: {
+          name: tool.name,
+          description: tool.description,
+          parameters: {
+            type: 'object',
+            properties,
+            ...(required.length > 0 ? { required } : {}),
+          },
+        },
+      };
+    });
+  }
+
+  private extractToolCalls(toolCalls: unknown): Array<{ name: string; arguments: Record<string, any> }> {
+    if (!Array.isArray(toolCalls)) {
+      return [];
+    }
+
+    return toolCalls
+      .map((toolCall: any) => {
+        const rawArgs = toolCall?.function?.arguments;
+        let parsedArgs: Record<string, any> = {};
+
+        if (typeof rawArgs === 'string' && rawArgs.trim()) {
+          try {
+            parsedArgs = JSON.parse(rawArgs);
+          } catch {
+            parsedArgs = { raw: rawArgs };
+          }
+        }
+
+        return {
+          name: toolCall?.function?.name || 'unknown_tool',
+          arguments: parsedArgs,
+        };
+      })
+      .filter(call => call.name !== 'unknown_tool');
   }
 }
 

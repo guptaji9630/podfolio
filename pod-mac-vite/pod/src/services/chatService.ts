@@ -127,6 +127,15 @@ export class ChatService {
     messages: ChatMessage[],
     enableTools: boolean = ENV.ENABLE_AI_TOOLS
   ): Promise<ChatApiResponse> {
+    const latestUserMessage = messages.filter(m => m.role === 'user').at(-1)?.content || '';
+
+    // Frontend-only production mode (no backend/proxy available).
+    if (ENV.IS_PROD) {
+      return {
+        message: this.generateFrontendReply(latestUserMessage),
+      };
+    }
+
     try {
       const firstPass = await this.requestCompletion(messages, enableTools);
 
@@ -162,10 +171,54 @@ export class ChatService {
         };
       }
 
+      if (errorMsg.includes('Network Error') || errorMsg.includes('CORS') || errorMsg.includes('ERR_NETWORK')) {
+        return {
+          message: this.generateFrontendReply(latestUserMessage),
+        };
+      }
+
       return {
-        message: "I apologize, but I'm having trouble processing your request right now. Please try again.",
+        message: this.generateFrontendReply(latestUserMessage),
       };
     }
+  }
+
+  private generateFrontendReply(userInput: string): string {
+    const input = userInput.trim().toLowerCase();
+
+    if (!input) {
+      return "Hey! Ask me about Abhishek's skills, QA experience, projects, or how to contact him.";
+    }
+
+    if (/^(hi|hii|hello|hey|yo|namaste)\b/.test(input)) {
+      return "Hey! I can help with Abhishek's QA experience, projects, skills, or contact details.";
+    }
+
+    if (/(contact|email|reach|hire|connect|call|phone)/.test(input)) {
+      return "You can contact Abhishek at abhishekg9630@gmail.com or +91-9560934582. If you want, draft a short message and I can help improve it.";
+    }
+
+    if (/(availability|available|free|open to work|open for)/.test(input)) {
+      return "Abhishek is open to QA/testing roles and project discussions. Share your timeline and requirements, and I can help draft a message for him.";
+    }
+
+    if (/(project|portfolio|fitforge|agmatix|trail management)/.test(input)) {
+      return "Key projects: Trail Management System (QA testing, bug reporting, stability validation) and FitForge (MERN full-stack app with workout analytics).";
+    }
+
+    if (/(skill|tech|stack|tools?|jest|playwright|cypress|selenium|api testing|manual testing|automation)/.test(input)) {
+      return "Abhishek's core strengths: Manual + Automated Testing, bug reporting, API testing, regression/smoke testing, and tools like Jest, Playwright, Selenium, Cypress, Postman, plus MERN/Node/React experience.";
+    }
+
+    if (/(experience|role|work|successive|freelance)/.test(input)) {
+      return "He has worked as Associate Engineer (QA) and Software Engineer Trainee at Successive Digital, plus freelance web development experience.";
+    }
+
+    if (/(resume|cv)/.test(input)) {
+      return "You can open the Resume app from the dock to view/download Abhishek's resume. I can also summarize it for a specific role.";
+    }
+
+    return "I can help with Abhishek's QA experience, skills, projects, and contact details. Ask me something like 'What are his QA skills?' or 'How can I contact him?'";
   }
 
   private async requestCompletion(

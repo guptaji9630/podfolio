@@ -1,7 +1,8 @@
-import axios from 'axios';
 import { ENV } from '../config/env.config';
 import { ChatMessage, ChatApiResponse, AITool } from '../types';
 import { PROJECTS } from '../config/constants';
+import { apiClient } from './api';
+import { API_ENDPOINTS } from '../config/api.config';
 
 // AI Tools available to the assistant
 export const AI_TOOLS: AITool[] = [
@@ -227,9 +228,7 @@ export class ChatService {
     } catch (error: unknown) {
       console.error('Chat service error:', error);
 
-      const errorMsg = axios.isAxiosError(error)
-        ? String(error.response?.data?.error?.message || error.message || '')
-        : String((error as { message?: string })?.message || '');
+      const errorMsg = String((error as { message?: string })?.message || '');
 
       if (errorMsg.includes('invalid') || errorMsg.includes('unauthorized') || errorMsg.includes('401')) {
         return {
@@ -297,8 +296,8 @@ export class ChatService {
     messages: ChatMessage[],
     _enableTools: boolean
   ): Promise<{ responseText: string; toolCalls: Array<{ name: string; arguments: Record<string, any> }> }> {
-    const response = await axios.post(
-      ENV.NVIDIA_NIM_API_URL,
+    const response = await apiClient.post<{ choices: Array<{ message: { content: string } }> }>(
+      API_ENDPOINTS.CHAT.MESSAGE,
       {
         model: ENV.NVIDIA_NIM_MODEL,
         messages: this.buildNimMessages(messages),
@@ -308,17 +307,14 @@ export class ChatService {
         frequency_penalty: 0,
         presence_penalty: 0,
         stream: false,
-      },
-      {
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        responseType: 'json',
       }
     );
 
-    const assistantMessage = response.data?.choices?.[0]?.message;
+    if (!response.success || !response.data) {
+      throw new Error(response.error?.message || 'Failed to get completion');
+    }
+
+    const assistantMessage = response.data.choices?.[0]?.message;
     const responseText = String(assistantMessage?.content || '').trim();
 
     return { responseText, toolCalls: [] };

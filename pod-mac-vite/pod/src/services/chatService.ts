@@ -187,13 +187,6 @@ export class ChatService {
   ): Promise<ChatApiResponse> {
     const latestUserMessage = messages.filter(m => m.role === 'user').at(-1)?.content || '';
 
-    // Frontend-only production mode (no backend/proxy available).
-    if (ENV.IS_PROD) {
-      return {
-        message: this.generateFrontendReply(latestUserMessage),
-      };
-    }
-
     try {
       const allToolCalls: Array<{ name: string; arguments: Record<string, any> }> = [];
       let currentMessages = [...messages];

@@ -7,21 +7,10 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
   return value || '';
 };
 
-const getNimApiUrl = (): string => {
-  const configured = getEnvVar('VITE_NVIDIA_NIM_API_URL', '/nim-api/chat/completions');
-
-  // In dev, force local proxy path to avoid browser CORS failures.
-  if (import.meta.env.DEV && /^https?:\/\//i.test(configured)) {
-    return '/nim-api/chat/completions';
-  }
-
-  return configured;
-};
-
 export const ENV = {
   // API Configuration
   API_BASE_URL: getEnvVar('VITE_API_BASE_URL', 'http://localhost:3002/api'),
-  NVIDIA_NIM_API_URL: getNimApiUrl(),
+  NVIDIA_NIM_API_URL: getEnvVar('VITE_NVIDIA_NIM_API_URL', '/api/nim/chat/completions'),
   NVIDIA_NIM_MODEL: getEnvVar('VITE_NVIDIA_NIM_MODEL', 'meta/llama-3.1-8b-instruct'),
   
   // Feature Flags

@@ -5,26 +5,16 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
-    const nimApiKey = env.NVIDIA_NIM_API_KEY || env.VITE_NVIDIA_NIM_API_KEY;
 
     return {
       server: {
         port: 5173,
         host: '0.0.0.0',
         proxy: {
-          '/nim-api': {
-            target: 'https://integrate.api.nvidia.com',
+          '/api': {
+            target: 'http://localhost:3002',
             changeOrigin: true,
-            secure: true,
-            rewrite: (path) => path.replace(/^\/nim-api/, '/v1'),
-            configure: (proxy) => {
-              proxy.on('proxyReq', (proxyReq) => {
-                if (nimApiKey) {
-                  proxyReq.setHeader('Authorization', `Bearer ${nimApiKey}`);
-                }
-                proxyReq.setHeader('Accept', 'application/json');
-              });
-            },
+            secure: false,
           },
         },
       },

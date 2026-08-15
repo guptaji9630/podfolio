@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import contactRouter from './contact.js';
+import nimRouter from './nim.js';
 
 const router = Router();
 
 // Mount routes
 router.use('/contact', contactRouter);
+router.use('/nim', nimRouter);
 
 // Root endpoint
 router.get('/', (req, res) => {

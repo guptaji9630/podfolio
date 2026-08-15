@@ -9,6 +9,11 @@ export const ENV = {
   RESEND_API_KEY: process.env.RESEND_API_KEY!,
   RECIPIENT_EMAIL: process.env.RECIPIENT_EMAIL || 'abhishekg9630@gmail.com',
   
+  // NVIDIA NIM API
+  NVIDIA_NIM_API_KEY: process.env.NVIDIA_NIM_API_KEY!,
+  NVIDIA_NIM_API_URL: process.env.NVIDIA_NIM_API_URL || 'https://integrate.api.nvidia.com/v1',
+  NVIDIA_NIM_MODEL: process.env.NVIDIA_NIM_MODEL || 'meta/llama-3.1-8b-instruct',
+  
   // Security
   ALLOWED_ORIGINS: (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(','),
   RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX || '100'),
@@ -16,7 +21,7 @@ export const ENV = {
 };
 
 // Validate required env vars
-const required = ['RESEND_API_KEY'];
+const required = ['RESEND_API_KEY', 'NVIDIA_NIM_API_KEY'];
 const missingRequired: string[] = [];
 
 required.forEach(key => {

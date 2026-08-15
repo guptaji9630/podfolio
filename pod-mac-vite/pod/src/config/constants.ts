@@ -3,43 +3,81 @@ import { Project } from '../types';
 export const PROJECTS: Project[] = [
   {
     id: '1',
-    name: 'Fintech Dashboard',
-    category: 'Web App',
-    date: 'Yesterday, 2:30 PM',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAkLoTCVZOWGz9BgOussciF8Xuu3vSrVqHwSCDyqHHnkjBjg2dRjmXs3L1sOdaKkkz2-08D_A7j99bX08rSBZVRGZwhRCxNaPaadEEGZGU4CdyLb-Zo6NYGQFesZQ_kfmcy_diWFXTzqjqK_CVeT08Y5Jz2OyNasqSglphQRvYeS2DPs99nKpmV66t01NYj98i6eSkqfI95appjVYabbX-bRQ3POMzqB8rRizuVf4v74jDKdl7ncxf5u5SSXvgLO8Z7VdrAuCu0hTE0',
-    description: 'A comprehensive dark-mode financial dashboard.'
+    name: 'Trail Management System - Agmatix',
+    category: 'QA Testing',
+    date: '2025',
+    image: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=2070',
+    description: 'Tested core features to ensure smooth data flow and reliable performance. Reported bugs with clear steps and improved system quality. Validated stability and usability after each update.',
+    techStack: ['Manual Testing', 'Bug Reporting', 'Regression Testing', 'Test Cases'],
+    githubUrl: '#',
+    liveDemo: '#',
+    featured: true,
+    highlights: ['Core feature testing', 'Bug reporting', 'Stability validation', 'Usability testing']
   },
   {
     id: '2',
-    name: 'Travel App UI',
-    category: 'Mobile UI',
-    date: 'Today, 10:15 AM',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBt-NsUmdOiP7olFsVZ4s9gBTCASy8748HV7oInq1f8EbeRYo_7rxy-OS100WAQmgkkzyXnEfuhk-xIJVrvQrkF7M2pOoZ9cqFLi_xZ2Q1KeHsohRR_anmzW4cFCsxWKa7zhimiUTpjzVHpp_aGd25YoO-g3J3D1PrWcoo19hnWYHyjj4wVuAxYWzSOKPvavWS97ZJrjYz2gfh1QcWuGrB2hJU7JP3s_IMX8nLpwCBnN2BzhzbQnvWM_XetL-asuF3x3rBHxz21Hitg',
-    description: 'Minimalist travel booking interface.'
+    name: 'FitForge - The Fitness Tracker',
+    category: 'Full Stack Development',
+    date: '2025',
+    image: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&q=80&w=2070',
+    description: 'Developed full stack web app using MERN stack. Shows analytical workout data with progress photo feature.',
+    techStack: ['MERN', 'GraphQL', 'MongoDB', 'React', 'Node.js'],
+    githubUrl: '#',
+    liveDemo: '#',
+    featured: true,
+    highlights: ['Full stack MERN development', 'Workout analytics', 'Progress photo tracking', 'GraphQL API']
   },
   {
     id: '3',
-    name: 'Bean Identity',
-    category: 'Branding',
-    date: 'Oct 24, 2023',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBvcjPxHiFqzYtKunPzuc9_SmlV4uIB4ODUmC1dLhdyDhtfmL0RYroq1t1jfG349zuG2-PagCo4GmKcnbOm69uKofT0jKo-cYf4MLcXZ6rxwuY8wUoiV6On6tF1__FRtElz82Ka_x2KZ4mhgc0MNBNNnl9XPWusFdoXdkhbqhJKgmVXytgzRZfMOavEr2MbdpbyPDGaNR6PlBaWqyS_T2CsuckjqryjWgdd1vMvucTja2wOBoFnMBIEVInGrZkND-7Cl56gMIzsZtpj',
-    description: 'Brand identity for a specialty coffee roaster.'
+    name: 'AI Test Case Generator',
+    category: 'AI/ML Development',
+    date: '2025',
+    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=2070',
+    description: 'Built an AI-powered tool that automatically generates comprehensive test cases from requirement documents using LLMs. Integrates with GitHub Actions for CI/CD pipeline test generation.',
+    techStack: ['Python', 'FastAPI', 'OpenAI API', 'LangChain', 'GitHub Actions', 'Docker'],
+    githubUrl: '#',
+    liveDemo: '#',
+    featured: true,
+    highlights: ['Automated test case generation from requirements', 'LLM prompt engineering for QA', 'CI/CD integration', 'Reduced test writing time by 60%']
   },
   {
     id: '4',
-    name: 'SaaS Landing',
-    category: 'Web App',
-    date: 'Sep 12, 2023',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB0ffWciJheLAy3FPeOqK6KZZiH50FZz2TGlMAIiOnHweMXYZpeheIcd89rZFRjA36xAEi2AxqRyblzJASG6cfp_SyagCCGNkVH9gS8Yp5KFFUm9a56c3hx5RYHmRlfAGLsoOlbVcM5gn6RKhOBhgyf0H93ATOUwbavyT107U2vOSOXTIxZwv5TJaLO01HjHNblNXJDyBCLirpgBemRhpLjGKx0wgj6J6cxOJGl5Iy7NaFQdqYu3gmOc1OP-1WL0UbcBhtneyPiZpIo',
-    description: 'High-converting landing page for a SaaS platform.'
+    name: 'Smart Bug Triage Assistant',
+    category: 'AI/ML Development',
+    date: '2025',
+    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=2070',
+    description: 'Developed an intelligent bug classification system using NLP and ML to automatically categorize, prioritize, and assign bugs to relevant teams. Integrated with Jira and Slack.',
+    techStack: ['Python', 'scikit-learn', 'Transformers', 'Jira API', 'Slack Bot', 'FastAPI'],
+    githubUrl: '#',
+    liveDemo: '#',
+    featured: true,
+    highlights: ['Auto bug classification & prioritization', 'NLP-based duplicate detection', 'Jira/Slack integration', 'Improved triage accuracy by 40%']
   },
   {
     id: '5',
-    name: '3D Experiments',
-    category: 'Experimental',
-    date: 'Aug 05, 2023',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD8TnCixfWK-8N4MdOBaIaz8exGODjkwQlMKICjw31tJ4CY18BXVxGAFx8uCRpdXjEDMlQQDJjvfC6hJkaAL16WZeKpwBI3HjFkBBcmMx2gIRNiJ2ULHEIkQgKiWdGbgnJz9VAcJfCurqDYU9uD--CsY9Tqjrio0MuMeKabNeKhmhujGP0dV3GcO91qQTVnmzkkUY706fgA-9DOCk7XbqlU7C0gAxbb7Bvm7H1HW7mqCjxtCmC0Bm0pMBKaSVM9lcGRL4dkFbSL2GYb',
-    description: 'Explorations in WebGL and React Three Fiber.'
+    name: 'AI-Powered Test Data Generator',
+    category: 'AI/ML Development',
+    date: '2024',
+    image: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=2070',
+    description: 'Created a synthetic test data generation tool using GANs and LLMs to produce realistic test datasets for various domains (finance, healthcare, e-commerce). Supports schema-aware generation.',
+    techStack: ['Python', 'PyTorch', 'LangChain', 'Faker.js', 'PostgreSQL', 'Docker'],
+    githubUrl: '#',
+    liveDemo: '#',
+    featured: true,
+    highlights: ['Schema-aware synthetic data generation', 'GAN + LLM hybrid approach', 'Privacy-compliant test data', 'Supports multiple data domains']
+  },
+  {
+    id: '6',
+    name: 'Automated Code Review Bot',
+    category: 'AI/ML Development',
+    date: '2024',
+    image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=2070',
+    description: 'Built a GitHub App that uses LLMs to perform automated code reviews - checking for bugs, security issues, code style, and suggesting improvements. Integrated with GitHub Checks API.',
+    techStack: ['TypeScript', 'Node.js', 'GitHub API', 'OpenAI API', 'Probot', 'ESLint'],
+    githubUrl: '#',
+    liveDemo: '#',
+    featured: true,
+    highlights: ['Automated PR code reviews', 'Security vulnerability detection', 'Style & best practice enforcement', 'GitHub Checks API integration']
   }
 ];
 

@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
 
     return {
       server: {
-        port: 3000,
+        port: 5173,
         host: '0.0.0.0',
         proxy: {
           '/nim-api': {
@@ -29,14 +29,22 @@ export default defineConfig(({ mode }) => {
         },
       },
       plugins: [react(), tailwindcss()],
-      define: {
-        'process.env.API_KEY': JSON.stringify(''),
-        'process.env.NVIDIA_NIM_API_KEY': JSON.stringify('')
-      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              vendor: ['react', 'react-dom'],
+              pdf: ['html2canvas', 'jspdf'],
+              utils: ['axios'],
+            }
+          }
+        },
+        chunkSizeWarningLimit: 1000,
       }
     };
 });

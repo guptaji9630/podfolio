@@ -45,16 +45,6 @@ export const Chat: React.FC = () => {
               }`}
             >
               <div className="whitespace-pre-wrap break-words">{m.content}</div>
-              {m.toolCalls && m.toolCalls.length > 0 && (
-                <div className="mt-2 pt-2 border-t border-white/10">
-                  <div className="text-[10px] md:text-xs text-white/50 mb-1">🛠️ Tool used:</div>
-                  {m.toolCalls.map((tool, idx) => (
-                    <div key={idx} className="text-[10px] md:text-xs text-blue-300 font-mono">
-                      {tool.name}()
-                    </div>
-                  ))}
-                </div>
-              )}
               {m.timestamp && (
                 <div className="text-[9px] md:text-[10px] text-white/30 mt-1">
                   {formatRelativeTime(m.timestamp)}

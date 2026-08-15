@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { ENV } from '../config/env.config';
 import { ChatMessage, ChatApiResponse, AITool } from '../types';
+import { PROJECTS } from '../config/constants';
 
 // AI Tools available to the assistant
 export const AI_TOOLS: AITool[] = [
@@ -45,6 +46,37 @@ export const AI_TOOLS: AITool[] = [
     parameters: {},
   },
 ];
+
+async function executeToolCall(name: string, args: Record<string, any>): Promise<any> {
+  switch (name) {
+    case 'send_contact_email': {
+      const { subject, message, senderName, senderEmail } = args;
+      const response = await fetch(`${ENV.API_BASE_URL}/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, message, senderName, senderEmail }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to send email');
+      return { success: true, message: 'Email sent successfully', data };
+    }
+    case 'get_project_details': {
+      const { query } = args;
+      const lowerQuery = query.toLowerCase();
+      const projects = PROJECTS.filter(p => 
+        p.name.toLowerCase().includes(lowerQuery) || 
+        p.category.toLowerCase().includes(lowerQuery) ||
+        p.techStack?.some(t => t.toLowerCase().includes(lowerQuery))
+      );
+      return { projects: projects.map(p => ({ name: p.name, description: p.description, techStack: p.techStack, githubUrl: p.githubUrl, liveDemo: p.liveDemo })) };
+    }
+    case 'get_availability': {
+      return { available: true, message: "Abhishek is currently open to QA/testing roles and freelance projects. Available for consultations and full-time opportunities." };
+    }
+    default:
+      throw new Error(`Unknown tool: ${name}`);
+  }
+}
 
 const SYSTEM_INSTRUCTION = `You are Abhishek's personal AI assistant.
 
@@ -123,6 +155,32 @@ Keep responses concise like a chat message — no unnecessary lectures, just cle
 export class ChatService {
   constructor() {}
 
+  private detectToolIntent(message: string): { name: string; arguments: Record<string, any> } | null {
+    const lower = message.toLowerCase();
+    
+    // Check for project queries
+    if (/(project|portfolio|fitforge|agmatix|trail management|what.*project|show.*project)/.test(lower)) {
+      return { name: 'get_project_details', arguments: { query: message } };
+    }
+    
+    // Check for availability queries
+    if (/(availability|available|free|open to work|open for|hiring|hire me)/.test(lower)) {
+      return { name: 'get_availability', arguments: {} };
+    }
+    
+    // Check for contact/email queries
+    if (/(contact|email|reach|hire|connect|call|phone|send.*email|message.*abhishek)/.test(lower)) {
+      return { name: 'send_contact_email', arguments: { 
+        subject: 'Inquiry from portfolio chat', 
+        message: message,
+        senderName: 'Portfolio Visitor',
+        senderEmail: ''
+      }};
+    }
+    
+    return null;
+  }
+
   async sendMessage(
     messages: ChatMessage[],
     enableTools: boolean = ENV.ENABLE_AI_TOOLS
@@ -137,20 +195,41 @@ export class ChatService {
     }
 
     try {
-      const firstPass = await this.requestCompletion(messages, enableTools);
+      const allToolCalls: Array<{ name: string; arguments: Record<string, any> }> = [];
+      let currentMessages = [...messages];
 
-      // Some models return function call JSON as plain text content.
-      // If that happens, retry without tools so user gets a natural-language reply.
-      const needsPlainTextRetry =
-        firstPass.responseText.length === 0 || this.looksLikeFunctionPayload(firstPass.responseText);
+      // Local tool detection and execution (since NIM API doesn't support function calling reliably)
+      if (enableTools) {
+        const toolIntent = this.detectToolIntent(latestUserMessage);
+        if (toolIntent) {
+          try {
+            const result = await executeToolCall(toolIntent.name, toolIntent.arguments);
+            allToolCalls.push(toolIntent);
+            
+            // Add tool result as context for the model
+            const toolResultMessage = `Tool "${toolIntent.name}" returned: ${JSON.stringify(result)}`;
+            currentMessages.push({
+              role: 'tool',
+              content: toolResultMessage,
+              toolCalls: [{ name: toolIntent.name, arguments: toolIntent.arguments, result }],
+            });
+          } catch (toolError: any) {
+            allToolCalls.push(toolIntent);
+            currentMessages.push({
+              role: 'tool',
+              content: `Tool "${toolIntent.name}" failed: ${toolError.message}`,
+              toolCalls: [{ name: toolIntent.name, arguments: toolIntent.arguments, result: { error: toolError.message } }],
+            });
+          }
+        }
+      }
 
-      const finalResponse = needsPlainTextRetry
-        ? await this.requestCompletion(messages, false)
-        : firstPass;
-
+      // Get final response from model with tool context
+      const response = await this.requestCompletion(currentMessages, false);
+      
       return {
-        message: finalResponse.responseText || "I'm sorry, I couldn't process that request.",
-        toolCalls: finalResponse.toolCalls.length > 0 ? finalResponse.toolCalls : undefined,
+        message: response.responseText || "I'm sorry, I couldn't process that request.",
+        toolCalls: allToolCalls.length > 0 ? allToolCalls : undefined,
       };
     } catch (error: unknown) {
       console.error('Chat service error:', error);
@@ -223,7 +302,7 @@ export class ChatService {
 
   private async requestCompletion(
     messages: ChatMessage[],
-    enableTools: boolean
+    _enableTools: boolean
   ): Promise<{ responseText: string; toolCalls: Array<{ name: string; arguments: Record<string, any> }> }> {
     const response = await axios.post(
       ENV.NVIDIA_NIM_API_URL,
@@ -236,7 +315,6 @@ export class ChatService {
         frequency_penalty: 0,
         presence_penalty: 0,
         stream: false,
-        ...(enableTools ? { tools: this.formatToolsForNim() } : {}),
       },
       {
         headers: {
@@ -249,108 +327,29 @@ export class ChatService {
 
     const assistantMessage = response.data?.choices?.[0]?.message;
     const responseText = String(assistantMessage?.content || '').trim();
-    const toolCalls = this.extractToolCalls(assistantMessage?.tool_calls);
 
-    return { responseText, toolCalls };
+    return { responseText, toolCalls: [] };
   }
 
-  private looksLikeFunctionPayload(content: string): boolean {
-    if (!content) {
-      return false;
-    }
-
-    const trimmed = content.trim();
-
-    if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
-      return false;
-    }
-
-    try {
-      const parsed = JSON.parse(trimmed) as Record<string, unknown>;
-      const type = parsed?.type;
-      const name = parsed?.name;
-      return type === 'function' && typeof name === 'string' && name.length > 0;
-    } catch {
-      return false;
-    }
-  }
-
-  private buildNimMessages(messages: ChatMessage[]): Array<{ role: 'system' | 'user' | 'assistant'; content: string }> {
+  private buildNimMessages(messages: ChatMessage[]): Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string; tool_call_id?: string }> {
     return [
       { role: 'system', content: SYSTEM_INSTRUCTION },
-      ...messages.map(message => ({
-        role: message.role,
-        content: message.content,
-      })),
-    ];
-  }
-
-  private formatToolsForNim(): Array<{
-    type: 'function';
-    function: {
-      name: string;
-      description: string;
-      parameters: {
-        type: 'object';
-        properties: Record<string, { type: string; description: string }>;
-        required?: string[];
-      };
-    };
-  }> {
-    return AI_TOOLS.map(tool => {
-      const properties = Object.fromEntries(
-        Object.entries(tool.parameters).map(([name, config]) => [
-          name,
-          {
-            type: config.type,
-            description: config.description,
-          },
-        ])
-      );
-
-      const required = Object.entries(tool.parameters)
-        .filter(([, config]) => config.required)
-        .map(([name]) => name);
-
-      return {
-        type: 'function',
-        function: {
-          name: tool.name,
-          description: tool.description,
-          parameters: {
-            type: 'object',
-            properties,
-            ...(required.length > 0 ? { required } : {}),
-          },
-        },
-      };
-    });
-  }
-
-  private extractToolCalls(toolCalls: unknown): Array<{ name: string; arguments: Record<string, any> }> {
-    if (!Array.isArray(toolCalls)) {
-      return [];
-    }
-
-    return toolCalls
-      .map((toolCall: any) => {
-        const rawArgs = toolCall?.function?.arguments;
-        let parsedArgs: Record<string, any> = {};
-
-        if (typeof rawArgs === 'string' && rawArgs.trim()) {
-          try {
-            parsedArgs = JSON.parse(rawArgs);
-          } catch {
-            parsedArgs = { raw: rawArgs };
-          }
+      ...messages.map(message => {
+        if (message.role === 'tool') {
+          // For tool messages, we need to extract tool_call_id from toolCalls
+          const toolCallId = message.toolCalls?.[0]?.name ? `call_${message.toolCalls[0].name}_${Date.now()}` : undefined;
+          return {
+            role: 'tool' as const,
+            content: message.content,
+            tool_call_id: toolCallId,
+          };
         }
-
         return {
-          name: toolCall?.function?.name || 'unknown_tool',
-          arguments: parsedArgs,
+          role: message.role,
+          content: message.content,
         };
-      })
-      .filter(call => call.name !== 'unknown_tool');
+      }),
+    ];
   }
 }
 

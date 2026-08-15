@@ -121,7 +121,8 @@ export const Resume: React.FC = () => {
               <p className="text-[10px] md:text-[11px] leading-relaxed text-slate-700">
                 Dedicated Quality Assurance Engineer with hands-on experience in manual and automated testing. Skilled in identifying bugs, 
                 ensuring product quality, and improving testing processes. Strong background in software development with expertise in MERN stack 
-                and testing frameworks like Jest and Playwright. Committed to delivering high-quality software through rigorous testing and continuous improvement.
+                and testing frameworks like Jest and Playwright. Proficient in AI-assisted development using GitHub Copilot, Cursor, and ChatGPT for 
+                test automation, code generation, and debugging. Committed to delivering high-quality software through rigorous testing and continuous improvement.
               </p>
             </section>
 
@@ -222,7 +223,11 @@ export const Resume: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="text-[9px] md:text-[10px] font-bold text-primary uppercase mb-1.5">Tools & Others</h4>
-                  <p className="text-[9px] md:text-[10px] text-slate-700 leading-relaxed">Git, GitHub, MongoDB, MySQL, Postman, Android Development, C++, Python</p>
+                  <p className="text-[9px] md:text-[10px] text-slate-700 leading-relaxed">Git, GitHub, MongoDB, MySQL, Postman, Android Development, C++, Python, Docker, CI/CD Pipelines</p>
+                </div>
+                <div>
+                  <h4 className="text-[9px] md:text-[10px] font-bold text-primary uppercase mb-1.5">AI Development Tools</h4>
+                  <p className="text-[9px] md:text-[10px] text-slate-700 leading-relaxed">GitHub Copilot, Cursor IDE, ChatGPT, Claude Code, AI-assisted testing, Prompt engineering for test generation</p>
                 </div>
               </div>
             </section>

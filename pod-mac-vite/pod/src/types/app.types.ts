@@ -15,4 +15,9 @@ export interface Project {
   date: string;
   image: string;
   description: string;
+  techStack?: string[];
+  githubUrl?: string;
+  liveDemo?: string;
+  featured?: boolean;
+  highlights?: string[];
 }

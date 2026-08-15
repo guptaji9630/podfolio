@@ -21,10 +21,10 @@ export const AboutMe: React.FC = () => {
             <h1 className="text-xl md:text-2xl lg:text-4xl font-bold tracking-tight text-white mb-1">Hello, I'm Abhishek</h1>
             <p className="text-sm md:text-base lg:text-lg text-blue-400 font-medium mb-2 md:mb-3">Quality Assurance Engineer | Software Tester</p>
             <p className="text-gray-400 max-w-xl leading-relaxed text-xs md:text-sm mb-3 md:mb-4 font-light mx-auto md:mx-0">
-              Dedicated Quality Assurance Engineer with hands-on experience in manual and automated testing. Skilled in identifying bugs, ensuring product quality, and improving testing processes. Strong background in software development with expertise in MERN stack and testing frameworks like Jest and Playwright.
+              Dedicated Quality Assurance Engineer with hands-on experience in manual and automated testing. Skilled in identifying bugs, ensuring product quality, and improving testing processes. Strong background in software development with expertise in MERN stack and testing frameworks like Jest and Playwright. Proficient in AI-assisted development using GitHub Copilot, Cursor, and ChatGPT for test automation, code generation, and debugging.
             </p>
             <div className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">
-              {['QA Testing', 'Automation', 'Jest', 'Playwright', 'React', 'Node.js'].map(tag => (
+              {['QA Testing', 'Automation', 'Jest', 'Playwright', 'React', 'Node.js', 'GitHub Copilot', 'Cursor IDE', 'AI-Assisted Dev'].map(tag => (
                 <span key={tag} className="px-2 py-0.5 rounded text-[9px] md:text-[10px] font-medium bg-[#3a3a3c] border border-white/10 text-gray-300 shadow-sm">
                   {tag}
                 </span>
@@ -34,11 +34,12 @@ export const AboutMe: React.FC = () => {
         </div>
       </div>
 
-      <div className="p-3 md:p-4 lg:p-6 grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-3 lg:gap-4">
+      <div className="p-3 md:p-4 lg:p-6 grid grid-cols-1 sm:grid-cols-4 gap-2 md:gap-3 lg:gap-4">
         {[
           { icon: 'calendar_month', label: 'Experience', value: '1+ Year', color: 'bg-blue-500/20 text-blue-400' },
           { icon: 'bug_report', label: 'Tests Run', value: '500+ Cases', color: 'bg-purple-500/20 text-purple-400' },
           { icon: 'verified', label: 'Projects', value: '5+ Tested', color: 'bg-emerald-500/20 text-emerald-400' },
+          { icon: 'psychology', label: 'AI Tools', value: '5+ Mastered', color: 'bg-orange-500/20 text-orange-400' },
         ].map(stat => (
           <div key={stat.label} className="bg-[#2c2c2e]/60 border border-white/5 p-3 md:p-4 rounded-lg md:rounded-xl hover:bg-[#3a3a3c]/60 transition-colors cursor-default backdrop-blur-sm shadow-sm flex sm:flex-col items-center sm:items-start gap-3 md:gap-4 sm:gap-0">
             <div className="flex items-center gap-2 md:gap-3 mb-0 sm:mb-2">

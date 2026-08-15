@@ -22,7 +22,7 @@ export const ENV = {
   // API Configuration
   API_BASE_URL: getEnvVar('VITE_API_BASE_URL', 'http://localhost:3002/api'),
   NVIDIA_NIM_API_URL: getNimApiUrl(),
-  NVIDIA_NIM_MODEL: getEnvVar('VITE_NVIDIA_NIM_MODEL', 'meta/llama-4-maverick-17b-128e-instruct'),
+  NVIDIA_NIM_MODEL: getEnvVar('VITE_NVIDIA_NIM_MODEL', 'meta/llama-3.1-8b-instruct'),
   
   // Feature Flags
   ENABLE_ANALYTICS: getEnvVar('VITE_ENABLE_ANALYTICS', 'false') === 'true',

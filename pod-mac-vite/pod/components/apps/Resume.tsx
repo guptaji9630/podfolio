@@ -12,22 +12,40 @@ export const Resume: React.FC = () => {
     
     setIsDownloading(true);
     try {
-      const canvas = await html2canvas(resumeRef.current, {
-        scale: 3,
+      const element = resumeRef.current;
+      const originalStyles = {
+        width: element.style.width,
+        height: element.style.height,
+        overflow: element.style.overflow,
+        transform: element.style.transform,
+        transformOrigin: element.style.transformOrigin,
+      };
+
+      // Set fixed width for A4 rendering (794px = 210mm at 96dpi)
+      element.style.width = '794px';
+      element.style.overflow = 'visible';
+      element.style.transform = 'none';
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
-        windowWidth: 1200,
-        windowHeight: resumeRef.current.scrollHeight,
+        windowWidth: 794,
+        windowHeight: element.scrollHeight,
         onclone: (clonedDoc) => {
           const clonedElement = clonedDoc.querySelector('[data-resume-content]') as HTMLElement;
           if (clonedElement) {
+            clonedElement.style.width = '794px';
             clonedElement.style.fontFamily = 'Arial, sans-serif';
-            clonedElement.style.fontSize = '14px';
+            clonedElement.style.fontSize = '12px';
           }
         }
       });
-      
+
+      // Restore original styles
+      Object.assign(element.style, originalStyles);
+
       const imgData = canvas.toDataURL('image/png', 1.0);
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -35,15 +53,35 @@ export const Resume: React.FC = () => {
         format: 'a4',
         compress: true
       });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
+      const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / (imgWidth * 0.264583), pdfHeight / (imgHeight * 0.264583));
-      const imgX = (pdfWidth - imgWidth * 0.264583 * ratio) / 2;
       
-      pdf.addImage(imgData, 'PNG', imgX, 0, imgWidth * 0.264583 * ratio, imgHeight * 0.264583 * ratio, undefined, 'FAST');
+      // Calculate dimensions to fit A4 width
+      const ratio = pdfWidth / (imgWidth * 0.264583); // px to mm
+      const imgWidthMm = imgWidth * 0.264583 * ratio;
+      const imgHeightMm = imgHeight * 0.264583 * ratio;
+
+      // Split into multiple pages if needed
+      let remainingHeight = imgHeightMm;
+      let pageY = 0;
+      let pageNum = 0;
+
+      while (remainingHeight > 0) {
+        if (pageNum > 0) {
+          pdf.addPage();
+        }
+        
+        const pageHeight = Math.min(pdfHeight, remainingHeight);
+        pdf.addImage(imgData, 'PNG', 0, -pageY * 0.264583 * ratio, imgWidthMm, imgHeightMm, undefined, 'FAST');
+        
+        remainingHeight -= pdfHeight;
+        pageY += pdfHeight / (0.264583 * ratio);
+        pageNum++;
+      }
+
       pdf.save('Abhishek_Gupta_Resume.pdf');
     } catch (error) {
       console.error('Error generating PDF:', error);

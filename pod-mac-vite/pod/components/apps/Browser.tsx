@@ -1,20 +1,20 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { PROJECTS } from '../../constants';
+import { PROJECTS } from '../../src/config/constants';
 
 export const Browser: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const categories = useMemo(() => {
+  const categories = useMemo((): string[] => {
     const cats = ['All', ...new Set(PROJECTS.map(p => p.category))];
     return cats;
   }, []);
 
   const filteredProjects = useMemo(() => {
-    let projects = PROJECTS;
+    let projects = [...PROJECTS];
     if (selectedCategory !== 'All') {
       projects = projects.filter(p => p.category === selectedCategory);
     }
@@ -23,17 +23,17 @@ export const Browser: React.FC = () => {
       projects = projects.filter(p => 
         p.name.toLowerCase().includes(query) ||
         p.description.toLowerCase().includes(query) ||
-        p.techStack.some(t => t.toLowerCase().includes(query))
+        p.techStack?.some(t => t.toLowerCase().includes(query))
       );
     }
-    return projects.sort((a, b) => (b.featured === a.featured ? 0 : b.featured ? 1 : -1));
+    return [...projects].sort((a, b) => (b.featured === a.featured ? 0 : b.featured ? 1 : -1));
   }, [selectedCategory, searchQuery]);
 
   const stats = useMemo(() => ({
     total: PROJECTS.length,
     featured: PROJECTS.filter(p => p.featured).length,
     categories: categories.length - 1,
-    techStack: new Set(PROJECTS.flatMap(p => p.techStack)).size
+    techStack: new Set(PROJECTS.flatMap(p => p.techStack ?? [])).size
   }), []);
 
   return (

@@ -26,6 +26,58 @@ export const PROJECTS: Project[] = [
     liveDemo: '#',
     featured: true,
     highlights: ['Full stack MERN development', 'Workout analytics', 'Progress photo tracking', 'GraphQL API']
+  },
+  {
+    id: '3',
+    name: 'AI Test Case Generator',
+    category: 'AI/ML Development',
+    date: '2025',
+    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=2070',
+    description: 'Built an AI-powered tool that automatically generates comprehensive test cases from requirement documents using LLMs. Integrates with GitHub Actions for CI/CD pipeline test generation.',
+    techStack: ['Python', 'FastAPI', 'OpenAI API', 'LangChain', 'GitHub Actions', 'Docker'],
+    githubUrl: '#',
+    liveDemo: '#',
+    featured: true,
+    highlights: ['Automated test case generation from requirements', 'LLM prompt engineering for QA', 'CI/CD integration', 'Reduced test writing time by 60%']
+  },
+  {
+    id: '4',
+    name: 'Smart Bug Triage Assistant',
+    category: 'AI/ML Development',
+    date: '2025',
+    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=2070',
+    description: 'Developed an intelligent bug classification system using NLP and ML to automatically categorize, prioritize, and assign bugs to relevant teams. Integrated with Jira and Slack.',
+    techStack: ['Python', 'scikit-learn', 'Transformers', 'Jira API', 'Slack Bot', 'FastAPI'],
+    githubUrl: '#',
+    liveDemo: '#',
+    featured: true,
+    highlights: ['Auto bug classification & prioritization', 'NLP-based duplicate detection', 'Jira/Slack integration', 'Improved triage accuracy by 40%']
+  },
+  {
+    id: '5',
+    name: 'AI-Powered Test Data Generator',
+    category: 'AI/ML Development',
+    date: '2024',
+    image: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=2070',
+    description: 'Created a synthetic test data generation tool using GANs and LLMs to produce realistic test datasets for various domains (finance, healthcare, e-commerce). Supports schema-aware generation.',
+    techStack: ['Python', 'PyTorch', 'LangChain', 'Faker.js', 'PostgreSQL', 'Docker'],
+    githubUrl: '#',
+    liveDemo: '#',
+    featured: true,
+    highlights: ['Schema-aware synthetic data generation', 'GAN + LLM hybrid approach', 'Privacy-compliant test data', 'Supports multiple data domains']
+  },
+  {
+    id: '6',
+    name: 'Automated Code Review Bot',
+    category: 'AI/ML Development',
+    date: '2024',
+    image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=2070',
+    description: 'Built a GitHub App that uses LLMs to perform automated code reviews - checking for bugs, security issues, code style, and suggesting improvements. Integrated with GitHub Checks API.',
+    techStack: ['TypeScript', 'Node.js', 'GitHub API', 'OpenAI API', 'Probot', 'ESLint'],
+    githubUrl: '#',
+    liveDemo: '#',
+    featured: true,
+    highlights: ['Automated PR code reviews', 'Security vulnerability detection', 'Style & best practice enforcement', 'GitHub Checks API integration']
   }
 ];
 

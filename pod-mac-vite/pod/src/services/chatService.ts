@@ -168,8 +168,8 @@ export class ChatService {
       return { name: 'get_availability', arguments: {} };
     }
     
-    // Check for contact/email queries
-    if (/(contact|email|reach|hire|connect|call|phone|send.*email|message.*abhishek)/.test(lower)) {
+    // Check for contact/email queries - require minimum 10 chars to avoid backend validation errors
+    if (message.trim().length >= 10 && /(contact|email|reach|hire|connect|call|phone|send.*email|message.*abhishek)/.test(lower)) {
       return { name: 'send_contact_email', arguments: { 
         subject: 'Inquiry from portfolio chat', 
         message: message,

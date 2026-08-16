@@ -40,7 +40,7 @@ class SoundManager {
     this.initialized = true;
     
     const savedGlobal = storage.get<number>(KEYS.GLOBAL_VOLUME);
-    if (savedGlobal !== undefined) {
+    if (savedGlobal !== null) {
       this.globalVolume = savedGlobal;
     }
 

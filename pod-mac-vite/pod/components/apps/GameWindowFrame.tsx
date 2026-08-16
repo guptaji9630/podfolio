@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { WindowFrame } from '../WindowFrame';
-import type { AppWindow, AppId } from '../../src/types';
+import type { AppWindow } from '../../src/types';
 
 interface GameWindowFrameProps {
   app: AppWindow;
@@ -20,7 +20,7 @@ export const GameWindowFrame: React.FC<GameWindowFrameProps> = ({
   gameId,
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -39,7 +39,7 @@ export const GameWindowFrame: React.FC<GameWindowFrameProps> = ({
   const toggleFullscreen = async () => {
     if (!document.fullscreenElement) {
       try {
-        const container = canvasRef.current?.parentElement?.parentElement;
+        const container = containerRef.current;
         if (container) {
           await container.requestFullscreen();
           setIsFullscreen(true);
@@ -74,6 +74,7 @@ export const GameWindowFrame: React.FC<GameWindowFrameProps> = ({
       onMinimize={onMinimize}
     >
       <div
+        ref={containerRef}
         className="relative w-full h-full"
         style={{ minWidth: '400px', minHeight: '300px' }}
       >

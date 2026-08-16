@@ -38,13 +38,24 @@ const App: React.FC = () => {
     useWindowManager(INITIAL_WINDOWS);
 
   useEffect(() => {
+    const ALLOWED_GAME_IDS: AppId[] = ['dino', 'pong'];
+    const ALLOWED_PONG_MODES = ['classic', 'survival'];
+
     const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === 'LAUNCH_GAME') {
+      // Validate origin - only accept messages from same origin
+      if (event.origin !== window.location.origin) return;
+
+      if (event.data?.type === 'LAUNCH_GAME' && event.data.payload) {
         const { gameId, mode } = event.data.payload;
-        if (mode) {
-          sessionStorage.setItem('pong_mode', mode);
+        if (gameId && ALLOWED_GAME_IDS.includes(gameId as AppId)) {
+          if (mode && gameId === 'pong' && ALLOWED_PONG_MODES.includes(mode)) {
+            sessionStorage.setItem('pong_mode', mode);
+          } else if (mode) {
+            // Invalid mode for pong or mode for non-pong game
+            return;
+          }
+          openApp(gameId as AppId);
         }
-        openApp(gameId as AppId);
       }
     };
     window.addEventListener('message', handleMessage);

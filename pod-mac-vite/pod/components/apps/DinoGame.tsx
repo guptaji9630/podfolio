@@ -327,10 +327,11 @@ export const DinoGame: React.FC = () => {
   }, [isFullscreen, toggleFullscreen]);
 
   useEffect(() => {
-    document.addEventListener('fullscreenchange', () => {
+    const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
-    });
-    return () => document.removeEventListener('fullscreenchange', () => {});
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
   // --- Container resize observer ---

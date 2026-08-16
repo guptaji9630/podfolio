@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { storage } from '../../src/utils/storage';
 
 interface GameCardProps {
   id: string;
@@ -50,8 +49,8 @@ const GameCard: React.FC<GameCardProps> = ({
       {comingSoon && (
         <div className="absolute inset-0 rounded-2xl bg-black/50 flex items-center justify-center">
           <span className="text-white/50 text-sm md:text-base px-4 py-2 bg-black/30 backdrop-blur rounded-lg border border-white/10">
-             coming soon on this website stay tuned!
-             </span>
+            Coming Soon — Stay Tuned!
+          </span>
         </div>
       )}
     </div>

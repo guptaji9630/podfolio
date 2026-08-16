@@ -95,9 +95,16 @@ async function executeToolCall(name: string, args: Record<string, any>): Promise
       return { available: true, message: "Abhishek is currently open to QA/testing roles and freelance projects. Available for consultations and full-time opportunities." };
     }
     case 'get_game_list': {
-      const dinoHighScore = Number(localStorage.getItem('guptaos_dino_highscore') || '0');
-      const pongClassicHighScore = Number(localStorage.getItem('guptaos_pong_classic_highscore') || '0');
-      const pongSurvivalHighScore = Number(localStorage.getItem('guptaos_pong_survival_highscore') || '0');
+      let dinoHighScore = 0;
+      let pongClassicHighScore = 0;
+      let pongSurvivalHighScore = 0;
+      try {
+        dinoHighScore = Number(localStorage.getItem('guptaos_dino_highscore') || '0');
+        pongClassicHighScore = Number(localStorage.getItem('guptaos_pong_classic_highscore') || '0');
+        pongSurvivalHighScore = Number(localStorage.getItem('guptaos_pong_survival_highscore') || '0');
+      } catch {
+        // localStorage unavailable, use defaults
+      }
       return {
         games: [
           {
@@ -123,10 +130,20 @@ async function executeToolCall(name: string, args: Record<string, any>): Promise
     }
     case 'launch_game': {
       const { gameId, mode } = args;
+      const allowedGameIds = ['dino', 'pong'];
+      const allowedPongModes = ['classic', 'survival'];
+      if (!gameId || !allowedGameIds.includes(gameId)) {
+        return { success: false, message: 'Invalid game ID' };
+      }
+      if (gameId === 'pong' && mode && !allowedPongModes.includes(mode)) {
+        return { success: false, message: 'Invalid mode for Pong' };
+      }
+      // Use specific targetOrigin instead of wildcard
+      const targetOrigin = window.location.origin;
       window.parent.postMessage({ 
         type: 'LAUNCH_GAME', 
         payload: { gameId, mode } 
-      }, '*');
+      }, targetOrigin);
       return { success: true, message: `Launching ${gameId}${mode ? ` (${mode} mode)` : ''}...` };
     }
     default:
@@ -214,18 +231,18 @@ export class ChatService {
   private detectToolIntent(message: string): { name: string; arguments: Record<string, any> } | null {
     const lower = message.toLowerCase();
     
-    // Check for game queries - bored, want to play, games
-    if (/(bored|game|play|fun|entertain|what.*game|show.*game)/.test(lower)) {
-      return { name: 'get_game_list', arguments: {} };
-    }
-
-    // Check for specific game launch requests
+    // Check for specific game launch requests FIRST (before general game queries)
     if (/(launch|start|open|play).*dino/.test(lower)) {
       return { name: 'launch_game', arguments: { gameId: 'dino' } };
     }
     if (/(launch|start|open|play).*pong/.test(lower)) {
       const mode = lower.includes('survival') ? 'survival' : 'classic';
       return { name: 'launch_game', arguments: { gameId: 'pong', mode } };
+    }
+
+    // Check for game queries - bored, want to play, games
+    if (/(bored|game|play|fun|entertain|what.*game|show.*game)/.test(lower)) {
+      return { name: 'get_game_list', arguments: {} };
     }
     
     // Check for project queries

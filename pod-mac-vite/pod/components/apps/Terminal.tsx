@@ -149,6 +149,13 @@ export const Terminal: React.FC = () => {
       newHistory.push('Contact me at abhishekg9630@gmail.com');
       newHistory.push('Phone: +91-9560934582');
     }
+    else if (cmd === 'game') {
+      newHistory.push('Usage: game <command>');
+      newHistory.push('  game list                 - Show available games with high scores');
+      newHistory.push('  game dino                 - Launch Dino Run');
+      newHistory.push('  game pong [classic|survival] - Launch Pong with mode');
+      newHistory.push('  game help                 - Show this help');
+    }
     else if (cmd.startsWith('game ')) {
       const gameCmd = cmd.substring(5).trim();
       if (gameCmd === 'list') {

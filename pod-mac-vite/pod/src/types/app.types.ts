@@ -1,4 +1,4 @@
-export type AppId = 'about' | 'finder' | 'mail' | 'resume' | 'settings' | 'terminal' | 'chat';
+export type AppId = 'about' | 'finder' | 'mail' | 'resume' | 'settings' | 'terminal' | 'chat' | 'games' | 'dino' | 'pong';
 
 export interface AppWindow {
   id: AppId;

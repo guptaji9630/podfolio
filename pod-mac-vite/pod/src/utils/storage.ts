@@ -5,6 +5,8 @@ const STORAGE_KEYS = {
   WIFI_ENABLED: 'portfolio_wifi_enabled',
   BLUETOOTH_ENABLED: 'portfolio_bluetooth_enabled',
   ACCENT_COLOR: 'portfolio_accent_color',
+  GLOBAL_VOLUME: 'portfolio_global_volume',
+  GAME_VOLUMES: 'portfolio_game_volumes',
 } as const;
 
 export const storage = {

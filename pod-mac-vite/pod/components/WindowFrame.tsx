@@ -31,8 +31,8 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
   }, []);
 
   const [size, setSize] = useState({
-    width: app.id === 'terminal' ? 650 : 850,
-    height: app.id === 'terminal' ? 400 : 550
+    width: app.id === 'terminal' ? 650 : app.id === 'dino' ? 960 : 850,
+    height: app.id === 'terminal' ? 400 : app.id === 'dino' ? 540 : 550
   });
 
   const [position, setPosition] = useState({

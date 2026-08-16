@@ -27,6 +27,7 @@ export const Terminal: React.FC = () => {
       newHistory.push('  pwd         - print working directory');
       newHistory.push('  whoami      - display user info');
       newHistory.push('  contact     - show contact information');
+      newHistory.push('  game        - launch games (dino, pong)');
       newHistory.push('  clear       - clear terminal screen');
     } 
     else if (cmd === 'pwd') {
@@ -147,6 +148,46 @@ export const Terminal: React.FC = () => {
     else if (cmd === 'contact') {
       newHistory.push('Contact me at abhishekg9630@gmail.com');
       newHistory.push('Phone: +91-9560934582');
+    }
+    else if (cmd === 'game') {
+      newHistory.push('Usage: game <command>');
+      newHistory.push('  game list                 - Show available games with high scores');
+      newHistory.push('  game dino                 - Launch Dino Run');
+      newHistory.push('  game pong [classic|survival] - Launch Pong with mode');
+      newHistory.push('  game help                 - Show this help');
+    }
+    else if (cmd.startsWith('game ')) {
+      const gameCmd = cmd.substring(5).trim();
+      if (gameCmd === 'list') {
+        const dinoHighScore = Number(localStorage.getItem('guptaos_dino_highscore') || '0');
+        const pongClassicHighScore = Number(localStorage.getItem('guptaos_pong_classic_highscore') || '0');
+        const pongSurvivalHighScore = Number(localStorage.getItem('guptaos_pong_survival_highscore') || '0');
+        newHistory.push('Available games:');
+        newHistory.push(`  dino        - Dino Run (endless runner)          High: ${dinoHighScore.toLocaleString()}`);
+        newHistory.push(`  pong        - Pong vs AI (classic/survival)     High: ${pongClassicHighScore} / ${pongSurvivalHighScore}`);
+        newHistory.push('');
+        newHistory.push('Usage: game <name> [mode]');
+        newHistory.push('  game dino                  - Launch Dino Run');
+        newHistory.push('  game pong                  - Launch Pong (classic mode)');
+        newHistory.push('  game pong classic          - Launch Pong Classic (first to 10)');
+        newHistory.push('  game pong survival         - Launch Pong Survival (60s)');
+      } else if (gameCmd === 'dino') {
+        newHistory.push('Launching Dino Run...');
+        window.parent.postMessage({ type: 'LAUNCH_GAME', payload: { gameId: 'dino' } }, '*');
+      } else if (gameCmd === 'pong' || gameCmd.startsWith('pong ')) {
+        const mode = gameCmd === 'pong' ? 'classic' : gameCmd.substring(5).trim();
+        const validMode = ['classic', 'survival'].includes(mode) ? mode : 'classic';
+        newHistory.push(`Launching Pong (${validMode} mode)...`);
+        window.parent.postMessage({ type: 'LAUNCH_GAME', payload: { gameId: 'pong', mode: validMode } }, '*');
+      } else if (gameCmd === 'help') {
+        newHistory.push('Game commands:');
+        newHistory.push('  game list                 - Show available games with high scores');
+        newHistory.push('  game dino                 - Launch Dino Run');
+        newHistory.push('  game pong [classic|survival] - Launch Pong with mode');
+        newHistory.push('  game help                 - Show this help');
+      } else {
+        newHistory.push(`Unknown game: ${gameCmd}. Type "game list" for available games.`);
+      }
     }
     else if (cmd) {
       newHistory.push(`Command not found: ${cmd}. Type "help" for available commands.`);

@@ -9,6 +9,9 @@ import { Resume } from './apps/Resume';
 import { Settings } from './apps/Settings';
 import { Terminal } from './apps/Terminal';
 import { Chat } from './apps/Chat';
+import { GamesLauncher } from './apps/GamesLauncher';
+import { DinoGame } from './apps/DinoGame';
+import { PongGame } from './apps/PongGame';
 
 interface DesktopProps {
   windows: AppWindow[];
@@ -64,6 +67,9 @@ export const Desktop: React.FC<DesktopProps> = ({
           />
         );
       case 'terminal': return <Terminal />;
+      case 'games': return <GamesLauncher />;
+      case 'dino': return <DinoGame />;
+      case 'pong': return <PongGame />;
       default: return null;
     }
   };

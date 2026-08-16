@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Desktop } from '../components/Desktop';
 import { MenuBar } from '../components/MenuBar';
 import { Dock } from '../components/Dock';
-import type { AppWindow } from './types';
+import type { AppWindow, AppId } from './types';
 import { useWindowManager } from './hooks/useWindowManager';
 import { WALLPAPERS } from './config/constants';
 import { storage, KEYS } from './utils/storage';
@@ -15,6 +15,9 @@ const INITIAL_WINDOWS: AppWindow[] = [
   { id: 'resume', title: 'Resume.pdf', isOpen: false, isMinimized: false, zIndex: 1 },
   { id: 'settings', title: 'System Settings', isOpen: false, isMinimized: false, zIndex: 1 },
   { id: 'terminal', title: 'Terminal', isOpen: false, isMinimized: false, zIndex: 1 },
+  { id: 'games', title: 'Games', isOpen: false, isMinimized: false, zIndex: 1 },
+  { id: 'dino', title: 'Dino Run', isOpen: false, isMinimized: false, zIndex: 1 },
+  { id: 'pong', title: 'Pong vs AI', isOpen: false, isMinimized: false, zIndex: 1 },
 ];
 
 const App: React.FC = () => {
@@ -33,6 +36,31 @@ const App: React.FC = () => {
 
   const { windows, activeApp, openApp, closeApp, focusApp, minimizeApp } =
     useWindowManager(INITIAL_WINDOWS);
+
+  useEffect(() => {
+    const ALLOWED_GAME_IDS: AppId[] = ['dino', 'pong'];
+    const ALLOWED_PONG_MODES = ['classic', 'survival'];
+
+    const handleMessage = (event: MessageEvent) => {
+      // Validate origin - only accept messages from same origin
+      if (event.origin !== window.location.origin) return;
+
+      if (event.data?.type === 'LAUNCH_GAME' && event.data.payload) {
+        const { gameId, mode } = event.data.payload;
+        if (gameId && ALLOWED_GAME_IDS.includes(gameId as AppId)) {
+          if (mode && gameId === 'pong' && ALLOWED_PONG_MODES.includes(mode)) {
+            sessionStorage.setItem('pong_mode', mode);
+          } else if (mode) {
+            // Invalid mode for pong or mode for non-pong game
+            return;
+          }
+          openApp(gameId as AppId);
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [openApp]);
 
   const handleWallpaperChange = useCallback((url: string) => {
     setWallpaper(url);

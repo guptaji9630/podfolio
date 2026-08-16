@@ -186,7 +186,7 @@ export const Resume: React.FC = () => {
                 <div>
                   <div className="flex justify-between items-start mb-1">
                     <h3 className="text-[11px] md:text-xs font-bold text-slate-900">Associate Engineer (QA)</h3>
-                    <span className="text-[9px] md:text-[10px] text-slate-500 font-medium whitespace-nowrap">May 2025 - Nov 2025</span>
+                    <span className="text-[9px] md:text-[10px] text-slate-500 font-medium whitespace-nowrap">May 2025 - Present</span>
                   </div>
                   <p className="text-[10px] text-primary font-bold mb-2">Successive Digital</p>
                   <ul className="text-[9px] md:text-[10px] text-slate-600 space-y-1 ml-4 list-disc">

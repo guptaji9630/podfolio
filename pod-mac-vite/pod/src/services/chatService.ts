@@ -46,6 +46,26 @@ export const AI_TOOLS: AITool[] = [
     description: "Check Abhishek's current availability for projects or consultations",
     parameters: {},
   },
+  {
+    name: 'get_game_list',
+    description: 'Get list of available games with high scores and descriptions',
+    parameters: {},
+  },
+  {
+    name: 'launch_game',
+    description: 'Launch a specific game for the user',
+    parameters: {
+      gameId: {
+        type: 'string',
+        description: 'Game to launch (dino or pong)',
+        required: true,
+      },
+      mode: {
+        type: 'string',
+        description: 'Game mode for Pong (classic or survival)',
+      },
+    },
+  },
 ];
 
 async function executeToolCall(name: string, args: Record<string, any>): Promise<any> {
@@ -73,6 +93,58 @@ async function executeToolCall(name: string, args: Record<string, any>): Promise
     }
     case 'get_availability': {
       return { available: true, message: "Abhishek is currently open to QA/testing roles and freelance projects. Available for consultations and full-time opportunities." };
+    }
+    case 'get_game_list': {
+      let dinoHighScore = 0;
+      let pongClassicHighScore = 0;
+      let pongSurvivalHighScore = 0;
+      try {
+        dinoHighScore = Number(localStorage.getItem('guptaos_dino_highscore') || '0');
+        pongClassicHighScore = Number(localStorage.getItem('guptaos_pong_classic_highscore') || '0');
+        pongSurvivalHighScore = Number(localStorage.getItem('guptaos_pong_survival_highscore') || '0');
+      } catch {
+        // localStorage unavailable, use defaults
+      }
+      return {
+        games: [
+          {
+            id: 'dino',
+            name: 'Dino Run',
+            description: 'Endless runner inspired by Chrome\'s offline dinosaur game. Jump over cacti and duck under birds. How far can you go?',
+            highScore: dinoHighScore,
+            genre: 'Endless Runner',
+          },
+          {
+            id: 'pong',
+            name: 'Pong vs AI',
+            description: 'Classic Pong with an AI opponent. Choose from 4 difficulty levels (Easy to Unbeatable) and 2 game modes (Classic & Survival).',
+            modes: ['classic', 'survival'],
+            highScores: {
+              classic: pongClassicHighScore,
+              survival: pongSurvivalHighScore,
+            },
+            genre: 'Arcade',
+          },
+        ],
+      };
+    }
+    case 'launch_game': {
+      const { gameId, mode } = args;
+      const allowedGameIds = ['dino', 'pong'];
+      const allowedPongModes = ['classic', 'survival'];
+      if (!gameId || !allowedGameIds.includes(gameId)) {
+        return { success: false, message: 'Invalid game ID' };
+      }
+      if (gameId === 'pong' && mode && !allowedPongModes.includes(mode)) {
+        return { success: false, message: 'Invalid mode for Pong' };
+      }
+      // Use specific targetOrigin instead of wildcard
+      const targetOrigin = window.location.origin;
+      window.parent.postMessage({ 
+        type: 'LAUNCH_GAME', 
+        payload: { gameId, mode } 
+      }, targetOrigin);
+      return { success: true, message: `Launching ${gameId}${mode ? ` (${mode} mode)` : ''}...` };
     }
     default:
       throw new Error(`Unknown tool: ${name}`);
@@ -158,6 +230,20 @@ export class ChatService {
 
   private detectToolIntent(message: string): { name: string; arguments: Record<string, any> } | null {
     const lower = message.toLowerCase();
+    
+    // Check for specific game launch requests FIRST (before general game queries)
+    if (/(launch|start|open|play).*dino/.test(lower)) {
+      return { name: 'launch_game', arguments: { gameId: 'dino' } };
+    }
+    if (/(launch|start|open|play).*pong/.test(lower)) {
+      const mode = lower.includes('survival') ? 'survival' : 'classic';
+      return { name: 'launch_game', arguments: { gameId: 'pong', mode } };
+    }
+
+    // Check for game queries - bored, want to play, games
+    if (/(bored|game|play|fun|entertain|what.*game|show.*game)/.test(lower)) {
+      return { name: 'get_game_list', arguments: {} };
+    }
     
     // Check for project queries
     if (/(project|portfolio|fitforge|agmatix|trail management|what.*project|show.*project)/.test(lower)) {
@@ -263,6 +349,17 @@ export class ChatService {
 
     if (/^(hi|hii|hello|hey|yo|namaste)\b/.test(input)) {
       return "Hey! I can help with Abhishek's QA experience, projects, skills, or contact details.";
+    }
+
+    if (/(bored|game|play|fun|entertain)/.test(input)) {
+      const dinoHighScore = Number(localStorage.getItem('guptaos_dino_highscore') || '0');
+      const pongClassicHighScore = Number(localStorage.getItem('guptaos_pong_classic_highscore') || '0');
+      const pongSurvivalHighScore = Number(localStorage.getItem('guptaos_pong_survival_highscore') || '0');
+      return `Bored? Let's play! 🎮 Available games:
+• **Dino Run** - Endless runner, high score: ${dinoHighScore.toLocaleString()}
+• **Pong vs AI** - Classic (First to 10) high: ${pongClassicHighScore}, Survival (60s) high: ${pongSurvivalHighScore}
+
+Say "play dino" or "play pong" to launch, or open the Games app from the dock!`;
     }
 
     if (/(contact|email|reach|hire|connect|call|phone)/.test(input)) {

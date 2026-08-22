@@ -2,7 +2,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion } from 'motion/react';
 import { AppWindow } from '../src/types';
+import { transitions } from '../src/types/motion';
 
 interface WindowFrameProps {
   app: AppWindow;
@@ -13,6 +15,12 @@ interface WindowFrameProps {
 }
 
 type ResizeDirection = 'n' | 's' | 'e' | 'w' | 'se' | 'sw' | 'ne' | 'nw' | null;
+
+const springConfig = { type: 'spring' as const, stiffness: 300, damping: 30, mass: 1 };
+const springConfig400 = { type: 'spring' as const, stiffness: 400, damping: 40 };
+
+// Module-level Set to track which windows have been opened globally
+const openedWindows = new Set<AppWindow['id']>();
 
 export const WindowFrame: React.FC<WindowFrameProps> = ({
   app,
@@ -42,9 +50,13 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
 
   const [isDragging, setIsDragging] = useState(false);
   const [resizeDir, setResizeDir] = useState<ResizeDirection>(null);
+  const [isFocused, setIsFocused] = useState(false);
 
   const dragStartPos = useRef({ x: 0, y: 0 });
   const resizeStartSize = useRef({ w: 0, h: 0, x: 0, y: 0 });
+
+  // Check if this window has been opened before (globally)
+  const hasOpenedBefore = openedWindows.has(app.id);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isMobile) return;
@@ -103,7 +115,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
     };
   }, [isDragging, resizeDir]);
 
-  const style: React.CSSProperties = isMobile ? {
+  const containerStyle: React.CSSProperties = isMobile ? {
     left: 0,
     top: 0,
     width: '100vw',
@@ -115,14 +127,23 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
     width: size.width,
     height: size.height,
     zIndex: app.zIndex,
-    transition: isDragging || resizeDir ? 'none' : 'box-shadow 0.2s ease',
   };
 
   return (
-    <div
-      className={`absolute glass-panel overflow-hidden border border-white/10 flex flex-col animate-fade-in shadow-[0_30px_60px_-12px_rgba(0,0,0,0.5)] ${isMobile ? 'rounded-none' : 'rounded-xl'}`}
-      style={style}
-      onMouseDown={() => onFocus()}
+    <motion.div
+      initial={hasOpenedBefore ? false : { opacity: 0, scale: 0.95, y: 20 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95, y: -20 }}
+      transition={springConfig}
+      style={containerStyle}
+      className={`absolute glass-panel overflow-hidden border border-white/10 flex flex-col shadow-[0_30px_60px_-12px_rgba(0,0,0,0.5)] ${isMobile ? 'rounded-none' : 'rounded-xl'}`}
+      onMouseDown={() => { 
+        onFocus(); 
+        setIsFocused(true);
+        // Mark this window as opened for future renders
+        openedWindows.add(app.id);
+      }}
+      onMouseLeave={() => setIsFocused(false)}
     >
       {/* Invisible Resize Handles (Desktop Only) */}
       {!isMobile && (
@@ -145,34 +166,46 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
       )}
 
       {/* Title Bar */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...springConfig400, delay: 0.1 }}
         className="h-10 bg-[#2c2c2e]/60 border-b border-black/40 flex items-center px-4 shrink-0 cursor-move select-none relative z-50"
         onMouseDown={handleMouseDown}
       >
         <div className="flex items-center gap-2 absolute left-4">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.9 }}
             onClick={(e) => { e.stopPropagation(); onClose(); }}
             className="w-3 h-3 rounded-full bg-[#FF453A] border border-[#FF3B30] flex items-center justify-center group/btn"
           >
             <span className="material-symbols-outlined text-[8px] opacity-0 group-hover/btn:opacity-100 text-black font-bold">close</span>
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.9 }}
             onClick={(e) => { e.stopPropagation(); onMinimize(); }}
             className="w-3 h-3 rounded-full bg-[#FFD60A] border border-[#FFCC00] flex items-center justify-center group/btn"
           >
             <span className="material-symbols-outlined text-[8px] opacity-0 group-hover/btn:opacity-100 text-black font-bold">remove</span>
-          </button>
+          </motion.button>
           {!isMobile && <button className="w-3 h-3 rounded-full bg-[#30D158] border border-[#28CD41]" />}
         </div>
         <div className="flex-1 text-center pointer-events-none">
           <span className="text-xs font-semibold text-white/80">{app.title}</span>
         </div>
-      </div>
+      </motion.div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-hidden flex flex-col bg-[#1c1c1e]/90 backdrop-blur-xl relative">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.15, duration: 0.2 }}
+        className="flex-1 overflow-hidden flex flex-col bg-[#1c1c1e]/90 backdrop-blur-xl relative"
+      >
         {children}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };

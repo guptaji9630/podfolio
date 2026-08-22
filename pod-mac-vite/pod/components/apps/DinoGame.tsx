@@ -1,5 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { motion } from 'motion/react';
 import { Volume2, VolumeX, Maximize, Minimize } from 'lucide-react';
+import { transitions } from '../../src/types/motion';
 
 const LOGICAL_WIDTH = 800;
 const LOGICAL_HEIGHT = 400;
@@ -266,6 +268,16 @@ function lerpColor(a: string, b: string, t: number): string {
   const bl = Math.round(ab + (bb - ab) * t);
   return `#${((r << 16) | (g << 8) | bl).toString(16).padStart(6, '0')}`;
 }
+
+const scoreVariants = {
+  initial: { opacity: 0, y: -20 },
+  animate: { opacity: 1, y: 0, transition: transitions.springNormal }
+};
+
+const containerVariants = {
+  initial: { opacity: 0, scale: 0.98 },
+  animate: { opacity: 1, scale: 1, transition: { ...transitions.springNormal, delay: 0.3 } }
+};
 
 export const DinoGame: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -703,36 +715,97 @@ export const DinoGame: React.FC = () => {
   }, [score, isNight]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-4">
-      <div className="w-full max-w-full flex-1 flex flex-col">
-        <div className="flex items-center justify-between mb-3 px-2">
-          <h1 className="text-lg font-semibold tracking-tight text-gray-800">Dino Run</h1>
-          <div className="flex items-center gap-4 font-mono text-sm">
-            <div className="flex flex-col items-end">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-4"
+    >
+      <motion.div
+        variants={containerVariants}
+        initial="initial"
+        animate="animate"
+        className="w-full max-w-full flex-1 flex flex-col"
+      >
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex items-center justify-between mb-3 px-2"
+        >
+          <motion.h1
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-lg font-semibold tracking-tight text-gray-800"
+          >
+            Dino Run
+          </motion.h1>
+          <motion.div
+            variants={{ animate: { transition: { staggerChildren: 0.05 } } }}
+            initial="hidden"
+            animate="visible"
+            className="flex items-center gap-4 font-mono text-sm"
+          >
+            <motion.div
+              variants={scoreVariants}
+              className="flex flex-col items-end"
+            >
               <span className="text-[10px] uppercase tracking-wider text-gray-400">Score</span>
-              <span className="text-gray-700 tabular-nums">{String(score).padStart(5, '0')}</span>
-            </div>
-            <div className="flex flex-col items-end">
+              <motion.span
+                key={score}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={transitions.springFast}
+                className="text-gray-700 tabular-nums"
+              >
+                {String(score).padStart(5, '0')}
+              </motion.span>
+            </motion.div>
+            <motion.div
+              variants={scoreVariants}
+              className="flex flex-col items-end"
+            >
               <span className="text-[10px] uppercase tracking-wider text-gray-400">Best</span>
-              <span className="text-gray-700 tabular-nums">{String(highScore).padStart(5, '0')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
+              <motion.span
+                key={highScore}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={transitions.springFast}
+                className="text-gray-700 tabular-nums"
+              >
+                {String(highScore).padStart(5, '0')}
+              </motion.span>
+            </motion.div>
+            <motion.div
+              variants={scoreVariants}
+              className="flex items-center gap-2"
+            >
+              <motion.button
                 onClick={() => setSoundOn((v) => !v)}
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.9 }}
                 className="text-gray-400 hover:text-gray-700 transition-colors p-1 -m-1"
                 aria-label={soundOn ? 'Mute' : 'Unmute'}
-              >{soundOn ? <Volume2 size={16} /> : <VolumeX size={16} />}</button>
-              <button
+              >
+                {soundOn ? <Volume2 size={16} /> : <VolumeX size={16} />}
+              </motion.button>
+              <motion.button
                 onClick={toggleFullscreen}
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.9 }}
                 className="text-gray-400 hover:text-gray-700 transition-colors p-1 -m-1"
                 aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-              >{isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}</button>
-            </div>
-          </div>
-        </div>
+              >
+                {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        </motion.div>
 
-        <div
+        <motion.div
           ref={containerRef}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2, type: 'spring', stiffness: 400, damping: 35 }}
           className="relative bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden cursor-pointer select-none flex-1"
           style={{ 
             width: '100%', 
@@ -746,19 +819,33 @@ export const DinoGame: React.FC = () => {
             className="w-full h-full block"
             style={{ imageRendering: 'pixelated' }}
           />
-        </div>
+        </motion.div>
 
-        <div className="mt-3 flex items-center justify-between gap-4">
-          <p className="text-xs text-gray-400 font-mono">Space / tap to jump &middot; hold Down to duck &middot; F11 fullscreen</p>
-          <div className="flex gap-2 md:hidden">
-            <button
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-3 flex items-center justify-between gap-4"
+        >
+          <motion.p
+            className="text-xs text-gray-400 font-mono"
+          >
+            Space / tap to jump &middot; hold Down to duck &middot; F11 fullscreen
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex gap-2 md:hidden"
+          >
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               className="px-4 py-2 rounded bg-gray-800 text-white text-xs font-mono active:bg-gray-600 select-none touch-none"
               onPointerDown={(e) => { e.preventDefault(); startDuck(); }}
               onPointerUp={stopDuck} onPointerLeave={stopDuck}
-            >DUCK</button>
-          </div>
-        </div>
-      </div>
-    </div>
+            >DUCK</motion.button>
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 };

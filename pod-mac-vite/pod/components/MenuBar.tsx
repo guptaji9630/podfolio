@@ -1,12 +1,23 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
+import { springNormal } from '../src/types/motion';
 
 interface MenuBarProps {
   activeAppTitle: string;
+  wifiEnabled: boolean;
+  bluetoothEnabled: boolean;
+  onWifiToggle: (enabled: boolean) => void;
+  onBluetoothToggle: (enabled: boolean) => void;
 }
 
-export const MenuBar: React.FC<MenuBarProps> = ({ activeAppTitle }) => {
+export const MenuBar: React.FC<MenuBarProps> = ({ 
+  activeAppTitle, 
+  wifiEnabled, 
+  bluetoothEnabled,
+  onWifiToggle,
+  onBluetoothToggle
+}) => {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -81,20 +92,54 @@ export const MenuBar: React.FC<MenuBarProps> = ({ activeAppTitle }) => {
         className="flex items-center gap-2 md:gap-4 text-white/90"
       >
         <div className="hidden md:flex items-center gap-2 md:gap-3">
-          <motion.span
-            animate={{ opacity: [1, 0.5, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="material-symbols-outlined text-[14px] md:text-[16px]"
+          <motion.button
+            onClick={() => onBluetoothToggle(!bluetoothEnabled)}
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.9 }}
+            className="flex items-center justify-center p-1 rounded-md hover:bg-white/10 transition-colors"
+            title={bluetoothEnabled ? 'Disable Bluetooth' : 'Enable Bluetooth'}
           >
-            bluetooth
-          </motion.span>
-          <motion.span
-            animate={{ rotate: [0, 5, -5, 0] }}
-            transition={{ duration: 3, repeat: Infinity }}
-            className="material-symbols-outlined text-[14px] md:text-[16px]"
+            <motion.span
+              animate={{
+                opacity: bluetoothEnabled ? [1, 0.6, 1] : 0.3,
+                scale: bluetoothEnabled ? [1, 1.05, 1] : 1,
+              }}
+              transition={{
+                duration: bluetoothEnabled ? 3 : 0,
+                repeat: bluetoothEnabled ? Infinity : 0,
+                ease: 'easeInOut',
+              }}
+              className={`material-symbols-outlined text-[14px] md:text-[16px] ${
+                bluetoothEnabled ? 'text-blue-400' : 'text-white/40'
+              }`}
+            >
+              bluetooth
+            </motion.span>
+          </motion.button>
+          <motion.button
+            onClick={() => onWifiToggle(!wifiEnabled)}
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.9 }}
+            className="flex items-center justify-center p-1 rounded-md hover:bg-white/10 transition-colors"
+            title={wifiEnabled ? 'Disable Wi-Fi' : 'Enable Wi-Fi'}
           >
-            wifi
-          </motion.span>
+            <motion.span
+              animate={{
+                opacity: wifiEnabled ? [1, 0.7, 1] : 0.3,
+                rotate: wifiEnabled ? [0, 3, -3, 0] : 0,
+              }}
+              transition={{
+                duration: wifiEnabled ? 4 : 0,
+                repeat: wifiEnabled ? Infinity : 0,
+                ease: 'easeInOut',
+              }}
+              className={`material-symbols-outlined text-[14px] md:text-[16px] ${
+                wifiEnabled ? 'text-blue-400' : 'text-white/40'
+              }`}
+            >
+              {wifiEnabled ? 'wifi' : 'wifi_off'}
+            </motion.span>
+          </motion.button>
           <span className="material-symbols-outlined text-[14px] md:text-[16px]">battery_full</span>
         </div>
         <div className="flex items-center gap-2 md:gap-3">

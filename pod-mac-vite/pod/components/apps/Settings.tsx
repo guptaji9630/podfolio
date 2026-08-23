@@ -102,11 +102,11 @@ export const Settings: React.FC<SettingsProps> = ({
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex justify-between items-center mb-6"
+                  className="flex justify-between items-center gap-4 mb-6"
                 >
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-white">Wi-Fi</span>
-                    <span className="text-[11px] text-white/40">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-medium text-white truncate">Wi-Fi</span>
+                    <span className="text-[11px] text-white/40 truncate">
                       {wifiEnabled ? 'Connected to Network' : 'Disabled'}
                     </span>
                   </div>
@@ -114,14 +114,15 @@ export const Settings: React.FC<SettingsProps> = ({
                     onClick={() => setWifiEnabled(!wifiEnabled)}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className={`w-12 h-6 rounded-full p-0.5 relative transition-colors ${
+                    className={`w-14 h-7 rounded-full p-0.5 relative transition-colors flex-shrink-0 ${
                       wifiEnabled ? 'bg-primary' : 'bg-white/10'
                     }`}
+                    aria-label={wifiEnabled ? 'Disable Wi-Fi' : 'Enable Wi-Fi'}
                   >
                     <motion.div
-                      animate={{ x: wifiEnabled ? 14 : 0 }}
+                      animate={{ x: wifiEnabled ? 18 : 0 }}
                       transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                      className="w-5 h-5 bg-white rounded-full"
+                      className="w-6 h-6 bg-white rounded-full shadow-sm"
                     />
                   </motion.button>
                 </motion.div>
@@ -129,26 +130,28 @@ export const Settings: React.FC<SettingsProps> = ({
                   {wifiEnabled && (
                     <motion.div
                       key="network"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
+                      initial={{ opacity: 0, height: 0, y: -10 }}
+                      animate={{ opacity: 1, height: 'auto', y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -10 }}
                       transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-                      className="space-y-2"
+                      className="space-y-2 pt-4 border-t border-white/5"
                     >
                       <motion.div
                         variants={itemVariants}
                         whileHover={{ x: 5 }}
-                        className="flex items-center gap-3 p-3 bg-white/5 rounded-lg"
+                        className="flex items-center gap-3 p-3 bg-white/5 rounded-lg transition-colors hover:bg-white/10"
                       >
-                        <span className="material-symbols-outlined text-primary">wifi</span>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-white">Portfolio Network</div>
-                          <div className="text-xs text-white/40">Connected</div>
+                        <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                          <span className="material-symbols-outlined text-primary">wifi</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-white truncate">Portfolio Network</div>
+                          <div className="text-xs text-white/40 truncate">Connected</div>
                         </div>
                         <motion.span
                           animate={{ scale: [1, 1.2, 1] }}
                           transition={{ duration: 2, repeat: Infinity }}
-                          className="material-symbols-outlined text-white/60"
+                          className="material-symbols-outlined text-green-400 flex-shrink-0"
                         >
                           check_circle
                         </motion.span>
@@ -194,11 +197,11 @@ export const Settings: React.FC<SettingsProps> = ({
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex justify-between items-center mb-6"
+                  className="flex justify-between items-center gap-4 mb-6"
                 >
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-white">Bluetooth</span>
-                    <span className="text-[11px] text-white/40">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-medium text-white truncate">Bluetooth</span>
+                    <span className="text-[11px] text-white/40 truncate">
                       {bluetoothEnabled ? 'Discoverable as "Portfolio Mac"' : 'Disabled'}
                     </span>
                   </div>
@@ -206,14 +209,15 @@ export const Settings: React.FC<SettingsProps> = ({
                     onClick={() => setBluetoothEnabled(!bluetoothEnabled)}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className={`w-12 h-6 rounded-full p-0.5 relative transition-colors ${
+                    className={`w-14 h-7 rounded-full p-0.5 relative transition-colors flex-shrink-0 ${
                       bluetoothEnabled ? 'bg-primary' : 'bg-white/10'
                     }`}
+                    aria-label={bluetoothEnabled ? 'Disable Bluetooth' : 'Enable Bluetooth'}
                   >
                     <motion.div
-                      animate={{ x: bluetoothEnabled ? 14 : 0 }}
+                      animate={{ x: bluetoothEnabled ? 18 : 0 }}
                       transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                      className="w-5 h-5 bg-white rounded-full"
+                      className="w-6 h-6 bg-white rounded-full shadow-sm"
                     />
                   </motion.button>
                 </motion.div>
@@ -221,10 +225,11 @@ export const Settings: React.FC<SettingsProps> = ({
                   {bluetoothEnabled && (
                     <motion.div
                       key="devices"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
+                      initial={{ opacity: 0, height: 0, y: -10 }}
+                      animate={{ opacity: 1, height: 'auto', y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -10 }}
                       transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                      className="space-y-2 pt-4 border-t border-white/5"
                     >
                       <motion.p
                         initial={{ opacity: 0 }}
@@ -238,24 +243,26 @@ export const Settings: React.FC<SettingsProps> = ({
                           key={i}
                           variants={itemVariants}
                           whileHover={{ x: 5 }}
-                          className="flex items-center gap-3 p-3 bg-white/5 rounded-lg"
+                          className="flex items-center gap-3 p-3 bg-white/5 rounded-lg transition-colors hover:bg-white/10"
                         >
-                          <motion.span
-                            whileHover={{ scale: 1.2, rotate: 10 }}
-                            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                            className="material-symbols-outlined text-primary"
-                          >
-                            {device.icon}
-                          </motion.span>
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-white">{device.name}</div>
-                            <div className="text-xs text-white/40">{device.status}</div>
+                          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                            <motion.span
+                              whileHover={{ scale: 1.2, rotate: 10 }}
+                              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                              className="material-symbols-outlined text-primary"
+                            >
+                              {device.icon}
+                            </motion.span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-white truncate">{device.name}</div>
+                            <div className="text-xs text-white/40 truncate">{device.status}</div>
                           </div>
                           {device.status === 'Connected' && (
                             <motion.span
                               animate={{ scale: [1, 1.15, 1] }}
                               transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
-                              className="material-symbols-outlined text-white/60"
+                              className="material-symbols-outlined text-green-400 flex-shrink-0"
                             >
                               check_circle
                             </motion.span>

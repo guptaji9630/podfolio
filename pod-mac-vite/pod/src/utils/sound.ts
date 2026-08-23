@@ -75,9 +75,9 @@ class SoundManager {
     return this.globalVolume;
   }
 
-  playTone(frequency: number, duration: number, type: OscillatorType, gameId?: string): void {
+  playTone(frequency: number, duration: number, type: OscillatorType, gameId?: string, presetVolume: number = 1): void {
     const ctx = this.getContext();
-    const volume = this.getEffectiveVolume(gameId);
+    const volume = this.getEffectiveVolume(gameId) * presetVolume;
     
     if (volume <= 0) return;
 
@@ -100,7 +100,7 @@ class SoundManager {
 
   play(soundType: SoundType, gameId?: string): void {
     const config = SOUND_PRESETS[soundType];
-    this.playTone(config.frequency, config.duration, config.type, gameId);
+    this.playTone(config.frequency, config.duration, config.type, gameId, config.volume);
   }
 
   playJump(gameId?: string): void { this.play('jump', gameId); }

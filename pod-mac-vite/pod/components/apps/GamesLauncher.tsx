@@ -147,7 +147,7 @@ export const GamesLauncher: React.FC = () => {
     window.parent.postMessage({ 
       type: 'LAUNCH_GAME', 
       payload: { gameId } 
-    }, '*');
+    }, window.location.origin);
   };
 
   const toggleFullscreen = async () => {

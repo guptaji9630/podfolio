@@ -4,7 +4,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { AppWindow } from '../src/types';
-import { transitions } from '../src/types/motion';
 
 interface WindowFrameProps {
   app: AppWindow;

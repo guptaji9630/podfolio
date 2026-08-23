@@ -294,6 +294,10 @@ export const DinoGame: React.FC = () => {
   const soundRef = useRef(new SoundManager());
   const [isNight, setIsNight] = useState(false);
 
+  // Refs to track last synced values to avoid unnecessary re-renders
+  const lastScoreRef = useRef(0);
+  const lastIsNightRef = useRef(false);
+
   const stateRef = useRef({
     dinoY: GROUND_Y - DINO_HEIGHT,
     velocity: 0,
@@ -602,7 +606,8 @@ export const DinoGame: React.FC = () => {
 
       s.score += 0.1;
       const intScore = Math.floor(s.score);
-      if (intScore !== score) {
+      if (intScore !== lastScoreRef.current) {
+        lastScoreRef.current = intScore;
         setScore(intScore);
         if (intScore > 0 && intScore % 100 === 0) { soundRef.current.point(); s.flash = 10; }
       }
@@ -618,7 +623,10 @@ export const DinoGame: React.FC = () => {
       }
 
       const night = Math.floor(s.score / DAY_NIGHT_CYCLE) % 2 === 1;
-      if (night !== isNight) setIsNight(night);
+      if (night !== lastIsNightRef.current) {
+        lastIsNightRef.current = night;
+        setIsNight(night);
+      }
     };
 
     const render = () => {
@@ -712,7 +720,7 @@ export const DinoGame: React.FC = () => {
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationId);
     };
-  }, [score, isNight]);
+  }, []);
 
   return (
     <motion.div

@@ -66,8 +66,14 @@ button,
   -webkit-user-select: none;
 }
 
-/* Smooth transitions */
-* {
+/* Smooth transitions - limited to interactive elements */
+button,
+a,
+.input,
+.card-interactive,
+.btn,
+[role="button"],
+[tabindex]:not([tabindex="-1"]) {
   transition-property: background-color, border-color, color, fill, stroke, opacity, transform;
   transition-timing-function: var(--ease-out);
   transition-duration: var(--duration-fast);

@@ -170,9 +170,16 @@ export const Terminal: React.FC = () => {
     else if (cmd.startsWith('game ')) {
       const gameCmd = cmd.substring(5).trim();
       if (gameCmd === 'list') {
-        const dinoHighScore = Number(localStorage.getItem('guptaos_dino_highscore') || '0');
-        const pongClassicHighScore = Number(localStorage.getItem('guptaos_pong_classic_highscore') || '0');
-        const pongSurvivalHighScore = Number(localStorage.getItem('guptaos_pong_survival_highscore') || '0');
+        let dinoHighScore = 0;
+        let pongClassicHighScore = 0;
+        let pongSurvivalHighScore = 0;
+        try {
+          dinoHighScore = Number(localStorage.getItem('guptaos_dino_highscore') || '0');
+          pongClassicHighScore = Number(localStorage.getItem('guptaos_pong_classic_highscore') || '0');
+          pongSurvivalHighScore = Number(localStorage.getItem('guptaos_pong_survival_highscore') || '0');
+        } catch {
+          // localStorage unavailable
+        }
         newHistory.push('Available games:');
         newHistory.push(`  dino        - Dino Run (endless runner)          High: ${dinoHighScore.toLocaleString()}`);
         newHistory.push(`  pong        - Pong vs AI (classic/survival)     High: ${pongClassicHighScore} / ${pongSurvivalHighScore}`);
@@ -184,12 +191,12 @@ export const Terminal: React.FC = () => {
         newHistory.push('  game pong survival         - Launch Pong Survival (60s)');
       } else if (gameCmd === 'dino') {
         newHistory.push('Launching Dino Run...');
-        window.parent.postMessage({ type: 'LAUNCH_GAME', payload: { gameId: 'dino' } }, '*');
+        window.parent.postMessage({ type: 'LAUNCH_GAME', payload: { gameId: 'dino' } }, window.location.origin);
       } else if (gameCmd === 'pong' || gameCmd.startsWith('pong ')) {
         const mode = gameCmd === 'pong' ? 'classic' : gameCmd.substring(5).trim();
         const validMode = ['classic', 'survival'].includes(mode) ? mode : 'classic';
         newHistory.push(`Launching Pong (${validMode} mode)...`);
-        window.parent.postMessage({ type: 'LAUNCH_GAME', payload: { gameId: 'pong', mode: validMode } }, '*');
+        window.parent.postMessage({ type: 'LAUNCH_GAME', payload: { gameId: 'pong', mode: validMode } }, window.location.origin);
       } else if (gameCmd === 'help') {
         newHistory.push('Game commands:');
         newHistory.push('  game list                 - Show available games with high scores');

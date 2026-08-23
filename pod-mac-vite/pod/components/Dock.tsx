@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { motion, spring } from 'motion/react';
+import { motion } from 'motion/react';
 import type { AppId, AppWindow } from '../src/types';
 
 interface DockProps {
@@ -9,7 +9,7 @@ interface DockProps {
   windows: AppWindow[];
 }
 
-const springConfig = { stiffness: 500, damping: 35, mass: 0.8 };
+const springConfig = { type: 'spring' as const, stiffness: 500, damping: 35, mass: 0.8 };
 
 export const Dock: React.FC<DockProps> = ({ openApp, activeApp, windows }) => {
   const [hoveredId, setHoveredId] = useState<AppId | null>(null);

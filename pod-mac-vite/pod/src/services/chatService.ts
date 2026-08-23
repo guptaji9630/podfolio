@@ -352,9 +352,16 @@ export class ChatService {
     }
 
     if (/(bored|game|play|fun|entertain)/.test(input)) {
-      const dinoHighScore = Number(localStorage.getItem('guptaos_dino_highscore') || '0');
-      const pongClassicHighScore = Number(localStorage.getItem('guptaos_pong_classic_highscore') || '0');
-      const pongSurvivalHighScore = Number(localStorage.getItem('guptaos_pong_survival_highscore') || '0');
+      let dinoHighScore = 0;
+      let pongClassicHighScore = 0;
+      let pongSurvivalHighScore = 0;
+      try {
+        dinoHighScore = Number(localStorage.getItem('guptaos_dino_highscore') || '0');
+        pongClassicHighScore = Number(localStorage.getItem('guptaos_pong_classic_highscore') || '0');
+        pongSurvivalHighScore = Number(localStorage.getItem('guptaos_pong_survival_highscore') || '0');
+      } catch {
+        // localStorage unavailable (privacy mode, etc.)
+      }
       return `Bored? Let's play! 🎮 Available games:
 • **Dino Run** - Endless runner, high score: ${dinoHighScore.toLocaleString()}
 • **Pong vs AI** - Classic (First to 10) high: ${pongClassicHighScore}, Survival (60s) high: ${pongSurvivalHighScore}

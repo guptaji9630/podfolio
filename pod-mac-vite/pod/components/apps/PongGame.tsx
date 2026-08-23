@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { soundManager } from '../../src/utils/sound';
 import { chatService } from '../../src/services/chatService';
+import { transitions } from '../../src/types/motion';
 
 type GameMode = 'classic' | 'survival';
 type Difficulty = 'easy' | 'medium' | 'hard' | 'unbeatable';
@@ -56,6 +58,30 @@ interface AIState {
   currentStrategy: 'aggressive' | 'defensive' | 'center' | null;
   strategyEndTime: number;
 }
+
+const overlayVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { staggerChildren: 0.08 } },
+  exit: { opacity: 0, transition: { duration: 0.15 } }
+};
+
+const cardVariants = {
+  initial: { opacity: 0, y: 30, scale: 0.95 },
+  animate: { opacity: 1, y: 0, scale: 1, transition: transitions.springNormal },
+  exit: { opacity: 0, y: -30, scale: 0.95, transition: { duration: 0.15 } }
+};
+
+const buttonVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0, transition: transitions.springNormal },
+  whileHover: { scale: 1.02, y: -2 },
+  whileTap: { scale: 0.98 }
+};
+
+const titleVariants = {
+  initial: { opacity: 0, y: -30, scale: 0.9 },
+  animate: { opacity: 1, y: 0, scale: 1, transition: transitions.springNormal }
+};
 
 export const PongGame: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -611,20 +637,42 @@ Suggest a brief strategy for the next few seconds: "aggressive" (attack), "defen
   }, [resetGame]);
 
   return (
-    <div 
+    <motion.div
       ref={containerRef}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="relative w-full h-full flex flex-col"
       style={{ minWidth: '400px', minHeight: '300px' }}
     >
-      <div className="absolute top-2 right-2 z-10 flex gap-1" style={{ pointerEvents: 'auto' }}>
-        <button
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="absolute top-2 right-2 z-10 flex gap-1"
+        style={{ pointerEvents: 'auto' }}
+      >
+        <motion.button
           onClick={handleFullscreenToggle}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
           className="p-1 bg-black/50 text-white rounded hover:bg-black/70 transition-colors"
           title="Fullscreen (F11)"
         >
-          <span className="material-symbols-outlined text-sm">{isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
-        </button>
-      </div>
+          <motion.span
+            animate={{ scale: isFullscreen ? 1 : 0 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            className="material-symbols-outlined text-sm"
+          >
+            fullscreen_exit
+          </motion.span>
+          <motion.span
+            animate={{ scale: isFullscreen ? 0 : 1 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            className="material-symbols-outlined text-sm absolute"
+          >
+            fullscreen
+          </motion.span>
+        </motion.button>
+      </motion.div>
 
       <canvas
         ref={canvasRef}
@@ -638,150 +686,310 @@ Suggest a brief strategy for the next few seconds: "aggressive" (attack), "defen
       />
       
       {isMobile && showMobileBanner && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur text-white px-4 py-2 rounded-lg text-sm animate-pulse z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: [0.7, 1, 0.7], y: [20, 0, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur text-white px-4 py-2 rounded-lg text-sm z-10"
+        >
           Drag to move paddle • Mobile version coming soon
-        </div>
+        </motion.div>
       )}
 
-      {gameState === 'setup' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur z-20">
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-2">PONG VS AI</h2>
-          <p className="text-white/70 text-lg mb-8 max-w-md text-center">
-            Configure your game settings, then press Start
-          </p>
-          
-          <div className="bg-white/5 backdrop-blur rounded-2xl p-8 md:p-12 w-full max-w-md border border-white/10 space-y-6">
-            <div>
-              <label className="block text-white/80 text-sm font-medium mb-3">Game Mode</label>
-              <select
-                value={mode}
-                onChange={e => setMode(e.target.value as GameMode)}
-                className="w-full bg-white/10 text-white border border-white/20 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+      <AnimatePresence mode="wait">
+        {gameState === 'setup' && (
+          <motion.div
+            key="setup"
+            variants={overlayVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur z-20"
+          >
+            <motion.h2
+              variants={titleVariants}
+              className="text-4xl md:text-6xl font-bold text-white mb-2"
+            >
+              PONG VS AI
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-white/70 text-lg mb-8 max-w-md text-center"
+            >
+              Configure your game settings, then press Start
+            </motion.p>
+            
+            <motion.div
+              variants={cardVariants}
+              className="bg-white/5 backdrop-blur rounded-2xl p-8 md:p-12 w-full max-w-md border border-white/10 space-y-6"
+            >
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
               >
-                <option value="classic">Classic - First to 10 points</option>
-                <option value="survival">Survival - 60 seconds, max score wins</option>
-              </select>
-            </div>
+                <label className="block text-white/80 text-sm font-medium mb-3">Game Mode</label>
+                <select
+                  value={mode}
+                  onChange={e => setMode(e.target.value as GameMode)}
+                  className="w-full bg-white/10 text-white border border-white/20 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="classic">Classic - First to 10 points</option>
+                  <option value="survival">Survival - 60 seconds, max score wins</option>
+                </select>
+              </motion.div>
 
-            <div>
-              <label className="block text-white/80 text-sm font-medium mb-3">AI Difficulty</label>
-              <select
-                value={difficulty}
-                onChange={e => setDifficulty(e.target.value as Difficulty)}
-                className="w-full bg-white/10 text-white border border-white/20 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
               >
-                <option value="easy">Easy - Slow reaction, high error margin</option>
-                <option value="medium">Medium - Balanced challenge</option>
-                <option value="hard">Hard - Fast reaction, low error</option>
-                <option value="unbeatable">Unbeatable - Perfect tracking, zero error</option>
-              </select>
-            </div>
+                <label className="block text-white/80 text-sm font-medium mb-3">AI Difficulty</label>
+                <select
+                  value={difficulty}
+                  onChange={e => setDifficulty(e.target.value as Difficulty)}
+                  className="w-full bg-white/10 text-white border border-white/20 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="easy">Easy - Slow reaction, high error margin</option>
+                  <option value="medium">Medium - Balanced challenge</option>
+                  <option value="hard">Hard - Fast reaction, low error</option>
+                  <option value="unbeatable">Unbeatable - Perfect tracking, zero error</option>
+                </select>
+              </motion.div>
 
-            <div className="pt-4 border-t border-white/10">
-              <button
-                onClick={() => {
-                  sessionStorage.setItem('pong_mode', mode);
-                  resetGame();
-                }}
-                className="w-full px-8 py-4 bg-primary text-white text-lg font-bold rounded-lg hover:bg-primary/90 active:scale-95 transition-all"
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="pt-4 border-t border-white/10"
               >
-                Start Game
-              </button>
-            </div>
+                <motion.button
+                  onClick={() => {
+                    sessionStorage.setItem('pong_mode', mode);
+                    resetGame();
+                  }}
+                  variants={buttonVariants}
+                  className="w-full px-8 py-4 bg-primary text-white text-lg font-bold rounded-lg hover:bg-primary/90 active:scale-95 transition-all"
+                >
+                  Start Game
+                </motion.button>
+              </motion.div>
 
-            <div className="grid grid-cols-2 gap-4 text-white/50 text-sm">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="grid grid-cols-2 gap-4 text-white/50 text-sm"
+              >
+                <motion.div
+                  whileHover={{ color: '#fff' }}
+                  className="text-center"
+                >
+                  Classic High: <span className="text-yellow-400 font-bold">{highScoreClassic}</span>
+                </motion.div>
+                <motion.div
+                  whileHover={{ color: '#fff' }}
+                  className="text-center"
+                >
+                  Survival High: <span className="text-yellow-400 font-bold">{highScoreSurvival}</span>
+                </motion.div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence mode="wait">
+        {gameState === 'menu' && (
+          <motion.div
+            key="menu"
+            variants={overlayVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur z-20"
+          >
+            <motion.h2
+              variants={titleVariants}
+              className="text-4xl md:text-6xl font-bold text-white mb-2"
+            >
+              PONG VS AI
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-white/70 text-lg mb-8 max-w-md text-center"
+            >
+              Use <kbd className="px-3 py-1 bg-white/10 rounded mx-1">Mouse</kbd> or <kbd className="px-3 py-1 bg-white/10 rounded mx-1">Touch</kbd> to move paddle<br/>
+              Press <kbd className="px-3 py-1 bg-white/10 rounded mx-1">P</kbd> to pause
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="flex flex-col gap-3 w-full max-w-xs"
+            >
+              <label className="text-white/80 text-sm">Mode: Classic (First to 10) / Survival (60s)</label>
+              <label className="text-white/80 text-sm">Difficulty: Easy → Unbeatable</label>
+            </motion.div>
+            <motion.button
+              onClick={resetGame}
+              variants={buttonVariants}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="mt-6 px-8 py-3 bg-primary text-white text-lg font-medium rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              Start Game
+            </motion.button>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="mt-8 grid grid-cols-2 gap-4 text-white/50 text-sm"
+            >
               <div>Classic High: <span className="text-yellow-400 font-bold">{highScoreClassic}</span></div>
               <div>Survival High: <span className="text-yellow-400 font-bold">{highScoreSurvival}</span></div>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {gameState === 'menu' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur z-20">
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-2">PONG VS AI</h2>
-          <p className="text-white/70 text-lg mb-8 max-w-md text-center">
-            Use <kbd className="px-3 py-1 bg-white/10 rounded mx-1">Mouse</kbd> or <kbd className="px-3 py-1 bg-white/10 rounded mx-1">Touch</kbd> to move paddle<br/>
-            Press <kbd className="px-3 py-1 bg-white/10 rounded mx-1">P</kbd> to pause
-          </p>
-          <div className="flex flex-col gap-3 w-full max-w-xs">
-            <label className="text-white/80 text-sm">Mode: Classic (First to 10) / Survival (60s)</label>
-            <label className="text-white/80 text-sm">Difficulty: Easy → Unbeatable</label>
-          </div>
-          <button
-            onClick={resetGame}
-            className="mt-6 px-8 py-3 bg-primary text-white text-lg font-medium rounded-lg hover:bg-primary/90 transition-colors"
+      <AnimatePresence mode="wait">
+        {gameState === 'paused' && (
+          <motion.div
+            key="paused"
+            variants={overlayVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur z-20"
           >
-            Start Game
-          </button>
-          <div className="mt-8 grid grid-cols-2 gap-4 text-white/50 text-sm">
-            <div>Classic High: <span className="text-yellow-400 font-bold">{highScoreClassic}</span></div>
-            <div>Survival High: <span className="text-yellow-400 font-bold">{highScoreSurvival}</span></div>
-          </div>
-        </div>
-      )}
-
-      {gameState === 'paused' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur z-20">
-          <div className="bg-white/5 backdrop-blur rounded-2xl p-8 md:p-12 text-center border border-white/10">
-            <h3 className="text-3xl font-bold text-white mb-6">PAUSED</h3>
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => handlePauseAction('resume')}
-                className="px-6 py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors"
+            <motion.div
+              variants={cardVariants}
+              className="bg-white/5 backdrop-blur rounded-2xl p-8 md:p-12 text-center border border-white/10"
+            >
+              <motion.h3
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-3xl font-bold text-white mb-6"
               >
-                Resume
-              </button>
-              <button
+                PAUSED
+              </motion.h3>
+              <motion.div
+                variants={{ animate: { transition: { staggerChildren: 0.08 } } }}
+                className="flex flex-col gap-3"
+              >
+                <motion.button
+                  onClick={() => handlePauseAction('resume')}
+                  variants={buttonVariants}
+                  className="px-6 py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  Resume
+                </motion.button>
+                <motion.button
+                  onClick={() => handlePauseAction('restart')}
+                  variants={buttonVariants}
+                  className="px-6 py-3 bg-white/10 text-white font-medium rounded-lg hover:bg-white/20 transition-colors"
+                >
+                  Restart
+                </motion.button>
+                <motion.button
+                  onClick={() => { setGameState('setup'); }}
+                  variants={buttonVariants}
+                  className="px-6 py-3 bg-red-500/20 text-red-400 font-medium rounded-lg hover:bg-red-500/30 transition-colors"
+                >
+                  Quit to Setup
+                </motion.button>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence mode="wait">
+        {gameState === 'gameover' && (
+          <motion.div
+            key="gameover"
+            variants={overlayVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur z-20"
+          >
+            <motion.h2
+              variants={titleVariants}
+              className="text-4xl md:text-6xl font-bold text-yellow-400 mb-4"
+            >
+              {mode === 'survival' ? 'TIME UP!' : playerScore > aiScore ? 'YOU WIN!' : 'AI WINS!'}
+            </motion.h2>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-white/80 text-xl mb-6"
+            >
+              Final Score: <span className="text-yellow-400 font-bold">{playerScore}</span> - <span className="text-orange-400 font-bold">{aiScore}</span>
+            </motion.div>
+            <AnimatePresence>
+              {mode === 'survival' && (
+                <motion.div
+                  key="survival-score"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-white/60 mb-8"
+                >
+                  Survival Score: <span className="text-yellow-400 font-bold">{playerScore}</span>
+                  {playerScore >= highScoreSurvival && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className="text-green-400 ml-2"
+                    >
+                      NEW RECORD!
+                    </motion.span>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex gap-4"
+            >
+              <motion.button
                 onClick={() => handlePauseAction('restart')}
-                className="px-6 py-3 bg-white/10 text-white font-medium rounded-lg hover:bg-white/20 transition-colors"
+                variants={buttonVariants}
+                className="px-8 py-3 bg-primary text-white text-lg font-medium rounded-lg hover:bg-primary/90 transition-colors"
               >
-                Restart
-              </button>
-              <button
+                Play Again
+              </motion.button>
+              <motion.button
                 onClick={() => { setGameState('setup'); }}
-                className="px-6 py-3 bg-red-500/20 text-red-400 font-medium rounded-lg hover:bg-red-500/30 transition-colors"
+                variants={buttonVariants}
+                className="px-8 py-3 bg-white/10 text-white text-lg font-medium rounded-lg hover:bg-white/20 transition-colors"
               >
-                Quit to Setup
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {gameState === 'gameover' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur z-20">
-          <h2 className="text-4xl md:text-6xl font-bold text-yellow-400 mb-4">
-            {mode === 'survival' ? 'TIME UP!' : playerScore > aiScore ? 'YOU WIN!' : 'AI WINS!'}
-          </h2>
-          <div className="text-white/80 text-xl mb-6">
-            Final Score: <span className="text-yellow-400 font-bold">{playerScore}</span> - <span className="text-orange-400 font-bold">{aiScore}</span>
-          </div>
-          {mode === 'survival' && (
-            <div className="text-white/60 mb-8">
-              Survival Score: <span className="text-yellow-400 font-bold">{playerScore}</span>
-              {playerScore >= highScoreSurvival && <span className="text-green-400 ml-2">NEW RECORD!</span>}
-            </div>
-          )}
-          <div className="flex gap-4">
-            <button
-              onClick={() => handlePauseAction('restart')}
-              className="px-8 py-3 bg-primary text-white text-lg font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                Change Settings
+              </motion.button>
+            </motion.div>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="mt-6 text-white/50 text-sm"
             >
-              Play Again
-            </button>
-            <button
-              onClick={() => { setGameState('setup'); }}
-              className="px-8 py-3 bg-white/10 text-white text-lg font-medium rounded-lg hover:bg-white/20 transition-colors"
-            >
-              Change Settings
-            </button>
-          </div>
-          <p className="mt-6 text-white/50 text-sm">
-            Press <kbd className="px-2 py-1 bg-white/10 rounded mx-1">R</kbd> or <kbd className="px-2 py-1 bg-white/10 rounded mx-1">Space</kbd> to restart
-          </p>
-        </div>
-      )}
-    </div>
+              Press <kbd className="px-2 py-1 bg-white/10 rounded mx-1">R</kbd> or <kbd className="px-2 py-1 bg-white/10 rounded mx-1">Space</kbd> to restart
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };

@@ -1,80 +1,210 @@
-
 import React from 'react';
+import { motion } from 'motion/react';
+import { transitions, itemStagger } from '../../src/types/motion';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: transitions.springSlow }
+};
+
+const statVariants = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: { opacity: 1, scale: 1, transition: transitions.springNormal }
+};
+
+const tagStagger = itemStagger(0, 0.8, 0.05);
 
 export const AboutMe: React.FC = () => {
   return (
-    <div className="flex-1 overflow-y-auto bg-black/40 scroll-smooth">
-      <div className="p-4 md:p-6 lg:p-8 pb-4 md:pb-6 border-b border-white/5">
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="flex-1 overflow-y-auto bg-black/40 scroll-smooth"
+    >
+      <motion.div
+        variants={itemVariants}
+        className="p-4 md:p-6 lg:p-8 pb-4 md:pb-6 border-b border-white/5"
+      >
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 lg:gap-8 items-center md:items-start text-center md:text-left">
-          <div className="relative group shrink-0">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ ...transitions.springBouncy, delay: 0.2 }}
+            className="relative group shrink-0"
+          >
             <div className="w-20 h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full overflow-hidden ring-2 md:ring-4 ring-white/5 shadow-2xl relative mx-auto">
               <div className="absolute inset-0 bg-black/10 z-10" />
-              <img 
-                alt="Portrait of Abhishek Gupta" 
-                className="w-full h-full object-cover" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZKuspfKMCIjla9em5-yyL0L2JfCUWziWNGGWvJWKAYRTFNXklC2yFMRfQSl2eA2IgjAZTKxuTdOvn6fvvDk6isxUb2USGnrC4xQryummw_OzWRHIaqGDdee3EeVUNTFPVDd1zpd5kwW0rxncdqE8t0sNoHVkgh9IY5xhaKNHK7egj8pXtDWtDk3OGTF1h3vGUxLDIMLYRXcIjCWsPimCIVP2xBvSo0EdVUSn4lsSioNlOCBUgWYMhzbS8S8R0jqKdXlm-SUYHvl8m" 
+              <motion.img
+                alt="Portrait of Abhishek Gupta"
+                className="w-full h-full object-cover"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZKuspfKMCIjla9em5-yyL0L2JfCUWziWNGGWvJWKAYRTFNXklC2yFMRfQSl2eA2IgjAZTKxuTdOvn6fvvDk6isxUb2USGnrC4xQryummw_OzWRHIaqGDdee3EeVUNTFPVDd1zpd5kwW0rxncdqE8t0sNoHVkgh9IY5xhaKNHK7egj8pXtDWtDk3OGTF1h3vGUxLDIMLYRXcIjCWsPimCIVP2xBvSo0EdVUSn4lsSioNlOCBUgWYMhzbS8S8R0jqKdXlm-SUYHvl8m"
+                whileHover={{ scale: 1.05 }}
+                transition={transitions.springGentle}
               />
             </div>
-            <div className="absolute bottom-0 md:bottom-1 right-1 md:right-2 lg:right-3 bg-green-500 w-3 h-3 md:w-4 md:h-4 rounded-full border-2 border-[#1c1c1e] z-20 shadow-md" />
-          </div>
-          <div className="pt-0 md:pt-1 flex-1">
-            <h1 className="text-xl md:text-2xl lg:text-4xl font-bold tracking-tight text-white mb-1">Hello, I'm Abhishek</h1>
-            <p className="text-sm md:text-base lg:text-lg text-blue-400 font-medium mb-2 md:mb-3">Quality Assurance Engineer | Software Tester</p>
-            <p className="text-gray-400 max-w-xl leading-relaxed text-xs md:text-sm mb-3 md:mb-4 font-light mx-auto md:mx-0">
+            <motion.div
+              animate={{ 
+                scale: [1, 1.1, 1],
+                boxShadow: ['0 0 0 0 rgba(34, 197, 94, 0.7)', '0 0 0 8px rgba(34, 197, 94, 0)', '0 0 0 0 rgba(34, 197, 94, 0.7)']
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="absolute bottom-0 md:bottom-1 right-1 md:right-2 lg:right-3 bg-green-500 w-3 h-3 md:w-4 md:h-4 rounded-full border-2 border-[#1c1c1e] z-20 shadow-md"
+            />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ ...transitions.springNormal, delay: 0.3 }}
+            className="pt-0 md:pt-1 flex-1"
+          >
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...transitions.springNormal, delay: 0.4 }}
+              className="text-xl md:text-2xl lg:text-4xl font-bold tracking-tight text-white mb-1"
+            >
+              Hello, I'm Abhishek
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...transitions.springNormal, delay: 0.5 }}
+              className="text-sm md:text-base lg:text-lg text-blue-400 font-medium mb-2 md:mb-3"
+            >
+              Quality Assurance Engineer | Software Tester
+            </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...transitions.springNormal, delay: 0.6 }}
+              className="text-gray-400 max-w-xl leading-relaxed text-xs md:text-sm mb-3 md:mb-4 font-light mx-auto md:mx-0"
+            >
               Dedicated Quality Assurance Engineer with hands-on experience in manual and automated testing. Skilled in identifying bugs, ensuring product quality, and improving testing processes. Strong background in software development with expertise in MERN stack and testing frameworks like Jest and Playwright. Proficient in AI-assisted development using GitHub Copilot, Cursor, and ChatGPT for test automation, code generation, and debugging.
-            </p>
-            <div className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">
-              {['QA Testing', 'Automation', 'Jest', 'Playwright', 'React', 'Node.js', 'GitHub Copilot', 'Cursor IDE', 'AI-Assisted Dev'].map(tag => (
-                <span key={tag} className="px-2 py-0.5 rounded text-[9px] md:text-[10px] font-medium bg-[#3a3a3c] border border-white/10 text-gray-300 shadow-sm">
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...transitions.springNormal, delay: 0.7 }}
+              className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start"
+            >
+              {['QA Testing', 'Automation', 'Jest', 'Playwright', 'React', 'Node.js', 'GitHub Copilot', 'Cursor IDE', 'AI-Assisted Dev'].map((tag, i) => (
+                <motion.span
+                  key={tag}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ ...transitions.springFast, delay: 0.8 + i * 0.05 }}
+                  whileHover={{ scale: 1.1, backgroundColor: 'var(--accent-color)' }}
+                  className="px-2 py-0.5 rounded text-[9px] md:text-[10px] font-medium bg-[#3a3a3c] border border-white/10 text-gray-300 shadow-sm cursor-pointer"
+                >
                   {tag}
-                </span>
+                </motion.span>
               ))}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="p-3 md:p-4 lg:p-6 grid grid-cols-1 sm:grid-cols-4 gap-2 md:gap-3 lg:gap-4">
+      <motion.div
+        variants={itemVariants}
+        className="p-3 md:p-4 lg:p-6 grid grid-cols-1 sm:grid-cols-4 gap-2 md:gap-3 lg:gap-4"
+      >
         {[
           { icon: 'calendar_month', label: 'Experience', value: '1+ Year', color: 'bg-blue-500/20 text-blue-400' },
           { icon: 'bug_report', label: 'Tests Run', value: '500+ Cases', color: 'bg-purple-500/20 text-purple-400' },
           { icon: 'verified', label: 'Projects', value: '5+ Tested', color: 'bg-emerald-500/20 text-emerald-400' },
           { icon: 'psychology', label: 'AI Tools', value: '5+ Mastered', color: 'bg-orange-500/20 text-orange-400' },
-        ].map(stat => (
-          <div key={stat.label} className="bg-[#2c2c2e]/60 border border-white/5 p-3 md:p-4 rounded-lg md:rounded-xl hover:bg-[#3a3a3c]/60 transition-colors cursor-default backdrop-blur-sm shadow-sm flex sm:flex-col items-center sm:items-start gap-3 md:gap-4 sm:gap-0">
-            <div className="flex items-center gap-2 md:gap-3 mb-0 sm:mb-2">
-              <div className={`p-1 md:p-1.5 rounded-md ${stat.color}`}>
+        ].map((stat, i) => (
+          <motion.div
+            key={stat.label}
+            variants={statVariants}
+            className="bg-[#2c2c2e]/60 border border-white/5 p-3 md:p-4 rounded-lg md:rounded-xl hover:bg-[#3a3a3c]/60 transition-colors cursor-default backdrop-blur-sm shadow-sm flex sm:flex-col items-center sm:items-start gap-3 md:gap-4 sm:gap-0 group"
+          >
+            <motion.div
+              whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
+              transition={transitions.springFast}
+              className="flex items-center gap-2 md:gap-3 mb-0 sm:mb-2"
+            >
+              <motion.div
+                className={`p-1 md:p-1.5 rounded-md ${stat.color}`}
+              >
                 <span className="material-symbols-outlined text-[16px] md:text-[18px]">{stat.icon}</span>
-              </div>
+              </motion.div>
               <span className="text-[9px] md:text-[10px] font-semibold text-gray-400 uppercase tracking-wide sm:hidden">{stat.label}</span>
               <span className="hidden sm:inline text-[9px] md:text-[10px] font-semibold text-gray-400 uppercase tracking-wide">{stat.label}</span>
-            </div>
-            <div className="flex flex-col sm:block">
+            </motion.div>
+            <motion.div
+              whileHover={{ x: 5 }}
+              className="flex flex-col sm:block"
+            >
               <div className="text-lg md:text-xl lg:text-2xl font-bold text-white sm:pl-0 md:sm:pl-1">{stat.value}</div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
-      <div className="p-4 md:p-6 lg:p-8 pt-2">
-        <h2 className="text-[11px] md:text-xs font-bold text-gray-300 mb-3 md:mb-4 uppercase tracking-wider">Latest Activity</h2>
-        <div className="space-y-3 md:space-y-4">
-          <div className="flex gap-3 md:gap-4 items-start">
-            <div className="w-1 h-8 md:h-10 bg-blue-500 rounded-full shrink-0" />
+      <motion.div
+        variants={itemVariants}
+        className="p-4 md:p-6 lg:p-8 pt-2"
+      >
+        <motion.h2
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ ...transitions.springNormal, delay: 0.2 }}
+          className="text-[11px] md:text-xs font-bold text-gray-300 mb-3 md:mb-4 uppercase tracking-wider"
+        >
+          Latest Activity
+        </motion.h2>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, staggerChildren: 0.1 }}
+          className="space-y-3 md:space-y-4"
+        >
+          <motion.div
+            whileHover={{ x: 5 }}
+            className="flex gap-3 md:gap-4 items-start"
+          >
+            <motion.div
+              animate={{ 
+                scaleY: [1, 1.05, 1],
+                opacity: [0.7, 1, 0.7]
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="w-1 h-8 md:h-10 bg-blue-500 rounded-full shrink-0"
+            />
             <div>
               <p className="text-xs md:text-sm text-white font-medium">Testing Trail Management System at Agmatix</p>
               <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 uppercase">Current • QA Testing</p>
             </div>
-          </div>
-          <div className="flex gap-3 md:gap-4 items-start">
-            <div className="w-1 h-8 md:h-10 bg-purple-500 rounded-full shrink-0" />
+          </motion.div>
+          <motion.div
+            whileHover={{ x: 5 }}
+            className="flex gap-3 md:gap-4 items-start"
+          >
+            <motion.div
+              animate={{ 
+                scaleY: [1, 1.05, 1],
+                opacity: [0.7, 1, 0.7]
+              }}
+              transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+              className="w-1 h-8 md:h-10 bg-purple-500 rounded-full shrink-0"
+            />
             <div>
               <p className="text-xs md:text-sm text-white font-medium">Developed FitForge Fitness Tracker with MERN Stack</p>
               <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 uppercase">2025 • Full Stack Development</p>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 };

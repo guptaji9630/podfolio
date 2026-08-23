@@ -1,6 +1,18 @@
 import React from 'react';
 import { useChat } from '../../src/hooks/useChat';
 import { formatRelativeTime } from '../../src/utils/formatters';
+import { motion, AnimatePresence } from 'motion/react';
+import { transitions } from '../../src/types/motion';
+
+const messageVariants = {
+  initial: { opacity: 0, y: 20, scale: 0.95 },
+  animate: { opacity: 1, y: 0, scale: 1, transition: transitions.springNormal },
+  exit: { opacity: 0, y: -20, scale: 0.95, transition: { duration: 0.15 } }
+};
+
+const typingVariants = {
+  animate: { opacity: [0.4, 1, 0.4] }
+};
 
 export const Chat: React.FC = () => {
   const { messages, input, setInput, isTyping, sendMessage, clearHistory, scrollRef } = useChat();
@@ -19,76 +31,118 @@ export const Chat: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-[#1e1e1e]">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 md:px-4 py-2 border-b border-white/10 bg-black/20">
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between px-3 md:px-4 py-2 border-b border-white/10 bg-black/20"
+      >
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+          <motion.div
+            animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            className="w-2 h-2 bg-green-500 rounded-full"
+          />
           <span className="text-xs md:text-sm text-white/70">AI Assistant Online</span>
         </div>
-        <button
+        <motion.button
           onClick={clearHistory}
+          whileHover={{ scale: 1.1, rotate: 10 }}
+          whileTap={{ scale: 0.9 }}
           className="text-[11px] md:text-xs text-white/40 hover:text-white/70 flex items-center gap-1"
         >
           <span className="material-symbols-outlined text-[14px] md:text-[16px]">delete</span>
           <span className="hidden sm:inline">Clear</span>
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4" ref={scrollRef}>
-        {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div
-              className={`max-w-[85%] md:max-w-[80%] px-3 md:px-4 py-2 md:py-2.5 rounded-2xl text-xs md:text-sm ${
-                m.role === 'user'
-                  ? 'bg-primary text-white rounded-tr-none'
-                  : 'bg-white/10 text-white/90 rounded-tl-none border border-white/5'
-              }`}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4"
+        ref={scrollRef}
+      >
+        <AnimatePresence mode="popLayout">
+          {messages.map((m, i) => (
+            <motion.div
+              key={i}
+              variants={messageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div className="whitespace-pre-wrap break-words">{m.content}</div>
-              {m.timestamp && (
-                <div className="text-[9px] md:text-[10px] text-white/30 mt-1">
-                  {formatRelativeTime(m.timestamp)}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
+              <motion.div
+                className={`max-w-[85%] md:max-w-[80%] px-3 md:px-4 py-2 md:py-2.5 rounded-2xl text-xs md:text-sm ${
+                  m.role === 'user'
+                    ? 'bg-primary text-white rounded-tr-none'
+                    : 'bg-white/10 text-white/90 rounded-tl-none border border-white/5'
+                }`}
+                whileHover={{ scale: 1.01 }}
+              >
+                <div className="whitespace-pre-wrap break-words">{m.content}</div>
+                {m.timestamp && (
+                  <div className="text-[9px] md:text-[10px] text-white/30 mt-1">
+                    {formatRelativeTime(m.timestamp)}
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
         {isTyping && (
-          <div className="flex justify-start">
+          <motion.div className="flex justify-start">
             <div className="bg-white/10 px-3 md:px-4 py-2 md:py-2.5 rounded-2xl rounded-tl-none border border-white/5">
-              <div className="flex gap-1">
-                <div className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce" />
-                <div className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce [animation-delay:0.2s]" />
-                <div className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce [animation-delay:0.4s]" />
-              </div>
+              <motion.div
+                className="flex gap-1"
+                variants={typingVariants}
+              >
+                <motion.div className="w-1.5 h-1.5 bg-white/40 rounded-full" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
+                <motion.div className="w-1.5 h-1.5 bg-white/40 rounded-full" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
+                <motion.div className="w-1.5 h-1.5 bg-white/40 rounded-full" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} />
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
       {/* Input */}
-      <div className="p-3 md:p-4 border-t border-white/10 bg-black/20">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="p-3 md:p-4 border-t border-white/10 bg-black/20"
+      >
         <div className="flex gap-2">
-          <input
+          <motion.input
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             disabled={isTyping}
+            whileFocus={{ boxShadow: '0 0 0 3px rgba(var(--accent-color-rgb, 10, 132, 255), 0.3)' }}
             className="flex-1 bg-white/5 border border-white/10 rounded-full px-3 md:px-4 py-2 text-xs md:text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary transition-all disabled:opacity-50"
           />
-          <button
+          <motion.button
             onClick={handleSend}
             disabled={!input.trim() || isTyping}
-            className="w-8 h-8 md:w-9 md:h-9 bg-primary text-white rounded-full flex items-center justify-center disabled:opacity-50 transition-all hover:scale-105 active:scale-95 disabled:hover:scale-100 shrink-0"
+            whileHover={{ scale: 1.1, rotate: 15 }}
+            whileTap={{ scale: 0.9 }}
+            className="w-8 h-8 md:w-9 md:h-9 bg-primary text-white rounded-full flex items-center justify-center disabled:opacity-50 transition-all shrink-0"
           >
-            <span className="material-symbols-outlined text-[18px] md:text-[20px]">send</span>
-          </button>
+            <motion.span
+              animate={{ x: [0, 2, 0] }}
+              transition={{ duration: 1, repeat: Infinity }}
+              className="material-symbols-outlined text-[18px] md:text-[20px]"
+            >
+              send
+            </motion.span>
+          </motion.button>
         </div>
         <div className="text-[9px] md:text-[10px] text-white/30 mt-2 text-center">
           AI can make mistakes. Verify important information.
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

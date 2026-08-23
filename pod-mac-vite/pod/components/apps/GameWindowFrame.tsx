@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { motion } from 'motion/react';
 import { WindowFrame } from '../WindowFrame';
 import type { AppWindow } from '../../src/types';
 
@@ -73,23 +74,47 @@ export const GameWindowFrame: React.FC<GameWindowFrameProps> = ({
       }}
       onMinimize={onMinimize}
     >
-      <div
+      <motion.div
         ref={containerRef}
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 35, delay: 0.1 }}
         className="relative w-full h-full"
         style={{ minWidth: '400px', minHeight: '300px' }}
       >
-        <div className="absolute top-2 right-2 z-10 flex gap-1" style={{ pointerEvents: 'none' }}>
-          <button
+        <motion.div
+          initial={{ opacity: 0, x: 10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          className="absolute top-2 right-2 z-10 flex gap-1"
+          style={{ pointerEvents: 'none' }}
+        >
+          <motion.button
             onClick={toggleFullscreen}
+            whileHover={{ scale: 1.1, rotate: 180 }}
+            whileTap={{ scale: 0.9 }}
             className="p-1 bg-black/50 text-white rounded hover:bg-black/70 transition-colors"
             title="Fullscreen (F11)"
             style={{ pointerEvents: 'auto' }}
           >
-            <span className="material-symbols-outlined text-sm">{isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
-          </button>
-        </div>
+            <motion.span
+              animate={{ scale: isFullscreen ? 1 : 0 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              className="material-symbols-outlined text-sm"
+            >
+              fullscreen_exit
+            </motion.span>
+            <motion.span
+              animate={{ scale: isFullscreen ? 0 : 1 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              className="material-symbols-outlined text-sm absolute"
+            >
+              fullscreen
+            </motion.span>
+          </motion.button>
+        </motion.div>
         {children}
-      </div>
+      </motion.div>
     </WindowFrame>
   );
 };

@@ -26,3 +26,4 @@ dist-ssr
 .env.local
 README.md
 AGENTS.md
+.opencode

@@ -12,6 +12,7 @@ import { Chat } from './apps/Chat';
 import { GamesLauncher } from './apps/GamesLauncher';
 import { DinoGame } from './apps/DinoGame';
 import { PongGame } from './apps/PongGame';
+import { AnimatePresence, motion } from 'motion/react';
 
 interface DesktopProps {
   windows: AppWindow[];
@@ -74,21 +75,31 @@ export const Desktop: React.FC<DesktopProps> = ({
     }
   };
 
+  const openWindows = windows.filter(w => w.isOpen && !w.isMinimized);
+  const sortedWindows = [...openWindows].sort((a, b) => a.zIndex - b.zIndex);
+
   return (
     <main className="flex-1 relative mt-8 mb-24 overflow-hidden p-4">
-      {windows.map((w) => (
-        w.isOpen && !w.isMinimized && (
-          <WindowFrame
+      <AnimatePresence mode="popLayout">
+        {sortedWindows.map((w, index) => (
+          <motion.div
             key={w.id}
-            app={w}
-            onFocus={() => onFocus(w.id)}
-            onClose={() => onClose(w.id)}
-            onMinimize={() => onMinimize(w.id)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ delay: index * 0.05 }}
           >
-            {renderAppContent(w.id)}
-          </WindowFrame>
-        )
-      ))}
+            <WindowFrame
+              app={w}
+              onFocus={() => onFocus(w.id)}
+              onClose={() => onClose(w.id)}
+              onMinimize={() => onMinimize(w.id)}
+            >
+              {renderAppContent(w.id)}
+            </WindowFrame>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </main>
   );
 };

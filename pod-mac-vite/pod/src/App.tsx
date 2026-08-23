@@ -92,7 +92,13 @@ const App: React.FC = () => {
     >
       <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px] pointer-events-none" />
 
-      <MenuBar activeAppTitle={windows.find(w => w.id === activeApp)?.title || 'Finder'} />
+      <MenuBar 
+        activeAppTitle={windows.find(w => w.id === activeApp)?.title || 'Finder'}
+        wifiEnabled={wifiEnabled}
+        bluetoothEnabled={bluetoothEnabled}
+        onWifiToggle={handleWifiToggle}
+        onBluetoothToggle={handleBluetoothToggle}
+      />
 
       <Desktop
         windows={windows}

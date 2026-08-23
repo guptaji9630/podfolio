@@ -2,6 +2,17 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+
+const lineVariants = {
+  initial: { opacity: 0, x: -10 },
+  animate: { opacity: 1, x: 0, transition: { duration: 0.1 } },
+  exit: { opacity: 0, x: 10, transition: { duration: 0.1 } }
+};
+
+const cursorVariants = {
+  animate: { opacity: [1, 0, 1], transition: { duration: 1, repeat: Infinity } }
+};
 
 export const Terminal: React.FC = () => {
   const [history, setHistory] = useState<string[]>(['Welcome to GuptaOS Terminal', 'Type "help" for commands.']);
@@ -159,9 +170,16 @@ export const Terminal: React.FC = () => {
     else if (cmd.startsWith('game ')) {
       const gameCmd = cmd.substring(5).trim();
       if (gameCmd === 'list') {
-        const dinoHighScore = Number(localStorage.getItem('guptaos_dino_highscore') || '0');
-        const pongClassicHighScore = Number(localStorage.getItem('guptaos_pong_classic_highscore') || '0');
-        const pongSurvivalHighScore = Number(localStorage.getItem('guptaos_pong_survival_highscore') || '0');
+        let dinoHighScore = 0;
+        let pongClassicHighScore = 0;
+        let pongSurvivalHighScore = 0;
+        try {
+          dinoHighScore = Number(localStorage.getItem('guptaos_dino_highscore') || '0');
+          pongClassicHighScore = Number(localStorage.getItem('guptaos_pong_classic_highscore') || '0');
+          pongSurvivalHighScore = Number(localStorage.getItem('guptaos_pong_survival_highscore') || '0');
+        } catch {
+          // localStorage unavailable
+        }
         newHistory.push('Available games:');
         newHistory.push(`  dino        - Dino Run (endless runner)          High: ${dinoHighScore.toLocaleString()}`);
         newHistory.push(`  pong        - Pong vs AI (classic/survival)     High: ${pongClassicHighScore} / ${pongSurvivalHighScore}`);
@@ -173,12 +191,12 @@ export const Terminal: React.FC = () => {
         newHistory.push('  game pong survival         - Launch Pong Survival (60s)');
       } else if (gameCmd === 'dino') {
         newHistory.push('Launching Dino Run...');
-        window.parent.postMessage({ type: 'LAUNCH_GAME', payload: { gameId: 'dino' } }, '*');
+        window.parent.postMessage({ type: 'LAUNCH_GAME', payload: { gameId: 'dino' } }, window.location.origin);
       } else if (gameCmd === 'pong' || gameCmd.startsWith('pong ')) {
         const mode = gameCmd === 'pong' ? 'classic' : gameCmd.substring(5).trim();
         const validMode = ['classic', 'survival'].includes(mode) ? mode : 'classic';
         newHistory.push(`Launching Pong (${validMode} mode)...`);
-        window.parent.postMessage({ type: 'LAUNCH_GAME', payload: { gameId: 'pong', mode: validMode } }, '*');
+        window.parent.postMessage({ type: 'LAUNCH_GAME', payload: { gameId: 'pong', mode: validMode } }, window.location.origin);
       } else if (gameCmd === 'help') {
         newHistory.push('Game commands:');
         newHistory.push('  game list                 - Show available games with high scores');
@@ -198,15 +216,33 @@ export const Terminal: React.FC = () => {
   };
 
   return (
-    <div 
-      className="flex-1 bg-black/95 p-3 md:p-4 font-mono text-xs md:text-sm overflow-y-auto cursor-text" 
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex-1 bg-black/95 p-3 md:p-4 font-mono text-xs md:text-sm overflow-y-auto cursor-text"
       onClick={() => inputRef.current?.focus()}
     >
-      <div className="mb-2">
-        {history.map((l, i) => <div key={i} className="text-gray-300 mb-0.5 whitespace-pre-wrap break-all">{l}</div>)}
-      </div>
+      <AnimatePresence mode="popLayout">
+        {history.map((l, i) => (
+          <motion.div
+            key={`${i}-${l}`}
+            variants={lineVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="text-gray-300 mb-0.5 whitespace-pre-wrap break-all"
+          >
+            {l}
+          </motion.div>
+        ))}
+      </AnimatePresence>
       <form onSubmit={handleCmd} className="flex gap-2">
-        <span className="text-green-500 font-bold shrink-0">➜</span>
+        <motion.span
+          variants={cursorVariants}
+          className="text-green-500 font-bold shrink-0"
+        >
+          ➜
+        </motion.span>
         <span className="text-blue-400 font-bold shrink-0">{currentPath}</span>
         <input 
           ref={inputRef}
@@ -219,6 +255,6 @@ export const Terminal: React.FC = () => {
         />
       </form>
       <div ref={endRef} />
-    </div>
+    </motion.div>
   );
 };

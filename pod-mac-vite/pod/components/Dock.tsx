@@ -22,7 +22,7 @@ export const Dock: React.FC<DockProps> = ({ openApp, activeApp, windows }) => {
     }
   }, []);
 
-const dockItems = [
+  const dockItems = [
     { id: 'about' as AppId, icon: 'person', label: 'About Me', color: 'bg-indigo-500', iconColor: 'text-white' },
     { id: 'chat' as AppId, icon: 'smart_toy', label: 'AI Assistant', color: 'bg-gradient-to-tr from-cyan-500 to-blue-500', iconColor: 'text-white' },
     { id: 'mail' as AppId, icon: 'mail', label: 'Mail', color: 'bg-sky-500', badge: 1, iconColor: 'text-white' },
@@ -34,6 +34,7 @@ const dockItems = [
     { id: 'claude-proxy' as AppId, icon: 'smart_toy', label: 'Claude Proxy', color: 'bg-purple-600', iconColor: 'text-white' },
     { id: 'quickdabba' as AppId, icon: 'shopping_cart', label: 'Quickdabba', color: 'bg-green-600', iconColor: 'text-white' },
     { id: 'fitforge' as AppId, icon: 'fitness_center', label: 'FitForge', color: 'bg-orange-500', iconColor: 'text-white' },
+    { id: 'trail-mgmt' as AppId, icon: 'route', label: 'Trail Mgmt', color: 'bg-teal-600', iconColor: 'text-white' },
     { id: 'portfolio-os' as AppId, icon: 'desktop_mac', label: 'Portfolio OS', color: 'bg-gradient-to-r from-indigo-500 to-purple-600', iconColor: 'text-white' },
   ];
 

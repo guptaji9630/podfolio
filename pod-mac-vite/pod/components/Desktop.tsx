@@ -15,6 +15,15 @@ import { PongGame } from './apps/PongGame';
 import { PROJECTS } from '../constants';
 import { AnimatePresence, motion } from 'motion/react';
 
+const PROJECT_APP_MAP: Partial<Record<AppId, string>> = {
+  pdfify: '1',
+  'claude-proxy': '2',
+  quickdabba: '3',
+  fitforge: '4',
+  'trail-mgmt': '5',
+  'portfolio-os': '6',
+};
+
 const ProjectShowcase: React.FC<{ project: typeof PROJECTS[0] }> = ({ project }) => (
   <div className="flex flex-col h-full overflow-y-auto p-6 bg-gradient-to-br from-[#1a1a2e] to-[#16213e]">
     <div className="max-w-4xl mx-auto w-full space-y-8">
@@ -104,8 +113,9 @@ export const Desktop: React.FC<DesktopProps> = ({
   setAccentColor
 }) => {
   const renderAppContent = (id: AppId) => {
-    const project = PROJECTS.find(p => p.id === id.replace('pdfify', '1').replace('claude-proxy', '2').replace('quickdabba', '3').replace('fitforge', '4').replace('trail-mgmt', '5').replace('portfolio-os', '6'));
-    
+    const projectId = PROJECT_APP_MAP[id];
+    const project = projectId ? PROJECTS.find(p => p.id === projectId) : undefined;
+
     switch (id) {
       case 'about': return <AboutMe />;
       case 'finder': return <Finder />;
@@ -130,12 +140,13 @@ export const Desktop: React.FC<DesktopProps> = ({
       case 'games': return <GamesLauncher />;
       case 'dino': return <DinoGame />;
       case 'pong': return <PongGame />;
-      case 'pdfify': return project ? <ProjectShowcase project={project} /> : null;
-      case 'claude-proxy': return project ? <ProjectShowcase project={project} /> : null;
-      case 'quickdabba': return project ? <ProjectShowcase project={project} /> : null;
-      case 'fitforge': return project ? <ProjectShowcase project={project} /> : null;
-      case 'trail-mgmt': return project ? <ProjectShowcase project={project} /> : null;
-      case 'portfolio-os': return project ? <ProjectShowcase project={project} /> : null;
+      case 'pdfify':
+      case 'claude-proxy':
+      case 'quickdabba':
+      case 'fitforge':
+      case 'trail-mgmt':
+      case 'portfolio-os':
+        return project ? <ProjectShowcase project={project} /> : null;
       default: return null;
     }
   };

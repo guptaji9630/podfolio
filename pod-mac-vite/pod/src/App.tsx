@@ -18,6 +18,12 @@ const INITIAL_WINDOWS: AppWindow[] = [
   { id: 'games', title: 'Games', isOpen: false, isMinimized: false, zIndex: 1 },
   { id: 'dino', title: 'Dino Run', isOpen: false, isMinimized: false, zIndex: 1 },
   { id: 'pong', title: 'Pong vs AI', isOpen: false, isMinimized: false, zIndex: 1 },
+  { id: 'pdfify', title: 'PDFify', isOpen: false, isMinimized: false, zIndex: 1 },
+  { id: 'claude-proxy', title: 'Claude AI Proxy', isOpen: false, isMinimized: false, zIndex: 1 },
+  { id: 'quickdabba', title: 'Quickdabba', isOpen: false, isMinimized: false, zIndex: 1 },
+  { id: 'fitforge', title: 'FitForge', isOpen: false, isMinimized: false, zIndex: 1 },
+  { id: 'trail-mgmt', title: 'Trail Management System', isOpen: false, isMinimized: false, zIndex: 1 },
+  { id: 'portfolio-os', title: 'Portfolio OS', isOpen: false, isMinimized: false, zIndex: 1 },
 ];
 
 const App: React.FC = () => {

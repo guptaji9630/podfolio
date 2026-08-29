@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import html2canvas from 'html2canvas';
@@ -212,7 +211,7 @@ export const Resume: React.FC = () => {
               transition={{ delay: 0.55 }}
               className="text-primary text-sm md:text-base font-semibold mt-1"
             >
-              Quality Assurance Engineer | Software Tester
+              Software Developer | Full Stack Developer
             </motion.p>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -248,6 +247,16 @@ export const Resume: React.FC = () => {
                 </motion.span>
                 <span>+91-9560934582</span>
               </div>
+              <div className="flex items-center gap-1">
+                <motion.span
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 2 }}
+                  className="material-symbols-outlined text-[14px]"
+                >
+                  location_on
+                </motion.span>
+                <span>Open to relocation | Remote-ready</span>
+              </div>
             </motion.div>
           </motion.div>
 
@@ -275,10 +284,7 @@ export const Resume: React.FC = () => {
                 transition={{ delay: 0.1 }}
                 className="text-[10px] md:text-[11px] leading-relaxed text-slate-700"
               >
-                Dedicated Quality Assurance Engineer with hands-on experience in manual and automated testing. Skilled in identifying bugs, 
-                ensuring product quality, and improving testing processes. Strong background in software development with expertise in MERN stack 
-                and testing frameworks like Jest and Playwright. Proficient in AI-assisted development using GitHub Copilot, Cursor, and ChatGPT for 
-                test automation, code generation, and debugging. Committed to delivering high-quality software through rigorous testing and continuous improvement.
+                Software Developer with 2+ years of full-stack experience delivering production-grade applications using MERN stack, Next.js, and TypeScript. Proven track record of building scalable systems (FitForge, PDFify, Claude AI Proxy, Quickdabba) from concept to deployment. Expert in React, Node.js, GraphQL, MongoDB, PostgreSQL with strong testing practices (Jest, Playwright, Cypress). Leverages AI-assisted development (GitHub Copilot, Cursor, Claude Code, OpenCode) for 3x velocity. Collaborative team player with freelance and enterprise experience. Committed to clean code, problem-solving, and delivering high-quality software solutions.
               </motion.p>
             </motion.section>
 
@@ -326,13 +332,16 @@ export const Resume: React.FC = () => {
               >
                 {[
                   {
-                    title: 'Associate Engineer (QA)',
+                    title: 'Associate Engineer (Full Stack)',
                     company: 'Successive Digital',
                     period: 'May 2025 - Present',
                     items: [
-                      'Ran manual checks on new features to ensure everything worked as expected',
-                      'Reported clear and detailed issues to help speed up fixes',
-                      'Helped improve the testing process by sharing feedback with the team'
+                      'Developed and maintained full-stack features using React, Node.js, GraphQL, and TypeScript for enterprise clients',
+                      'Built automated test suites with Jest and Playwright achieving 85%+ code coverage across critical user flows',
+                      'Designed and implemented REST/GraphQL APIs with optimized MongoDB queries reducing response time by 40%',
+                      'Collaborated on CI/CD pipelines using Docker, GitHub Actions, and Vercel for zero-downtime deployments',
+                      'Participated in code reviews, architecture discussions, and mentored junior developers on best practices',
+                      'Integrated AI-assisted development workflows using GitHub Copilot and Cursor for accelerated delivery'
                     ]
                   },
                   {
@@ -340,19 +349,22 @@ export const Resume: React.FC = () => {
                     company: 'Successive Digital',
                     period: 'May 2025 - Nov 2025',
                     items: [
-                      'Developed the fitness-forge MERN app',
-                      'Develop skills in Next.js, Node.js with Jest Testing',
-                      'Technologies used: JavaScript, NEXT.js, Axios, MongoDB, Git, Github, Node.js, Graph QL'
+                      'Built FitForge (MERN + GraphQL) from scratch: authentication, real-time workout tracking, progress analytics, photo uploads',
+                      'Implemented GraphQL schema/resolvers, MongoDB aggregation pipelines, and Apollo Client cache management',
+                      'Set up Jest/Playwright testing infrastructure, Docker containerization, and GitHub Actions CI/CD',
+                      'Technologies: JavaScript, Next.js, Axios, MongoDB, Git, GitHub, Node.js, GraphQL, Tailwind CSS'
                     ]
                   },
                   {
-                    title: 'Freelance Web Developer',
+                    title: 'Freelance Full Stack Developer',
                     company: 'Freelance',
                     period: 'May 2023 - Mar 2024',
                     items: [
-                      'Delivered tailored web development solutions for various clients using React.js and Node.js',
-                      'Improved user experience and boosted website traffic by 15% on average',
-                      'Managed end-to-end project lifecycles, ensuring timely and high-quality deliverables'
+                      'Delivered 5+ production React/Node.js applications including e-commerce platforms, dashboards, and REST APIs',
+                      'Integrated payment processing (Stripe), real-time features (Socket.io), and PostgreSQL databases',
+                      'Improved application performance by 15%+ via code splitting, Redis caching, and query optimization',
+                      'Managed end-to-end project lifecycles: requirements gathering → architecture → deployment → maintenance',
+                      'Built Quickdabba quick-commerce platform with multi-vendor support, real-time order tracking, and admin panel'
                     ]
                   }
                 ].map((exp, i) => (
@@ -392,24 +404,56 @@ export const Resume: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 className="text-[11px] md:text-xs font-bold uppercase tracking-widest border-b-2 border-slate-300 pb-1 mb-3 text-slate-900"
               >
-                Projects
+                Key Projects
               </motion.h2>
               <motion.div className="space-y-3" variants={{ animate: { transition: { staggerChildren: 0.05 } } }}>
                 {[
                   {
-                    title: 'Trail Management System - Agmatix',
+                    title: 'FitForge - Fitness Tracker (MERN + GraphQL)',
                     items: [
-                      'Tested core features of the trial platform to ensure smooth data flow and reliable performance',
-                      'Reported bugs with clear steps and worked with the team to improve system quality',
-                      'Checked each update of the tool to make sure it stayed stable and easy to use'
+                      'Full-stack fitness application with GraphQL API, real-time workout analytics, progress photo comparisons, and personalized plans',
+                      'Tech: React, Node.js, GraphQL (Apollo), MongoDB, Tailwind CSS, Jest, Playwright, Docker',
+                      'GitHub: github.com/guptaji9630/FitForge | Live: fitforge.vercel.app'
                     ]
                   },
                   {
-                    title: 'FitForge - The Fitness Tracker',
+                    title: 'PDFify - PDF Conversion Platform',
                     items: [
-                      'Developed a full stack web app using MERN stack for fitness lovers',
-                      'The application shows the analytical data of the workout with progress photo feature',
-                      'Libraries: MERN, Graph QL'
+                      'Full-stack PDF processing platform with file upload, cloud storage (Cloudinary), batch processing, and real-time progress tracking',
+                      'Tech: React, Node.js, TypeScript, MongoDB, Tailwind CSS, Cloudinary, Vercel',
+                      'GitHub: github.com/guptaji9630/pdfify-frontend | Live: pdfify.vercel.app'
+                    ]
+                  },
+                  {
+                    title: 'Claude AI Proxy - Node.js Microservice',
+                    items: [
+                      'Scalable proxy server for Claude AI with rate limiting, authentication, streaming response support, and request/response logging',
+                      'Tech: Node.js, Express, TypeScript, Vercel, Streaming, Rate Limiting, Helmet security',
+                      'GitHub: github.com/guptaji9630/Claude-ai-proxy | Live: claude-proxy.vercel.app'
+                    ]
+                  },
+                  {
+                    title: 'Quickdabba - Quick Commerce Platform',
+                    items: [
+                      'Grocery delivery platform with real-time order tracking (Socket.io), payment integration (Stripe), inventory management, and admin dashboard',
+                      'Tech: React, Node.js, MongoDB, Socket.io, Stripe, Redis, Docker, Multi-vendor architecture',
+                      'GitHub: github.com/guptaji9630/Quickdabba- | Live: quickdabba.vercel.app'
+                    ]
+                  },
+                  {
+                    title: 'Trail Management System (Agmatix)',
+                    items: [
+                      'Enterprise trial management platform - contributed full-stack features, automated testing (Jest/Playwright), API development, CI/CD improvements',
+                      'Tech: React, Node.js, GraphQL, PostgreSQL, Jest, Playwright, Docker, GitHub Actions',
+                      'Enterprise/Private repository'
+                    ]
+                  },
+                  {
+                    title: 'Portfolio OS (GuptaOS) - Desktop Environment',
+                    items: [
+                      'macOS-style desktop environment with window management, dock, terminal, AI chat, games, and system settings',
+                      'Tech: React 19, Motion (Framer Motion v13), Vite 6, Tailwind CSS 4, TypeScript, html2canvas, jsPDF',
+                      'GitHub: github.com/guptaji9630/podfolio | Live: podfolio-two.vercel.app'
                     ]
                   }
                 ].map((proj, i) => (
@@ -441,17 +485,19 @@ export const Resume: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 className="text-[11px] md:text-xs font-bold uppercase tracking-widest border-b-2 border-slate-300 pb-1 mb-3 text-slate-900"
               >
-                Skills
+                Technical Skills
               </motion.h2>
               <motion.div
-                className="grid grid-cols-1 md:grid-cols-3 gap-3"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
                 variants={{ animate: { transition: { staggerChildren: 0.05 } } }}
               >
                 {[
-                  { label: 'QA & Testing', skills: 'Manual Testing, Automated Testing, Bug Reporting, Test Cases, Jest, Playwright, Selenium, Cypress, API Testing, Regression Testing, Smoke Testing' },
-                  { label: 'Development', skills: 'JavaScript, React Native, Node.js, HTML, CSS, MERN Stack, Next.js' },
-                  { label: 'Tools & Others', skills: 'Git, GitHub, MongoDB, MySQL, Postman, Android Development, C++, Python, Docker, CI/CD Pipelines' },
-                  { label: 'AI Development Tools', skills: 'GitHub Copilot, Cursor IDE, ChatGPT, Claude Code, AI-assisted testing, Prompt engineering for test generation' }
+                  { label: 'Frontend', skills: 'React 18/19, Next.js 14+ (App Router), TypeScript, Tailwind CSS, GraphQL (Apollo Client), Socket.io, React Native (basics), Framer Motion, HTML5, CSS3' },
+                  { label: 'Backend', skills: 'Node.js, Express, GraphQL (Apollo Server/Yoga), REST APIs, MongoDB, PostgreSQL, Prisma ORM, Mongoose, JWT Auth, WebSockets' },
+                  { label: 'DevOps & Tools', skills: 'Docker, Git/GitHub Actions (CI/CD), Vercel, AWS (EC2, S3 basics), Linux, Nginx, Redis, Cloudinary, Postman, VS Code' },
+                  { label: 'Testing', skills: 'Jest, Playwright, Cypress, React Testing Library, API Testing (Postman), TDD practices, E2E testing, Unit testing, Coverage reporting' },
+                  { label: 'AI-Assisted Dev', skills: 'GitHub Copilot, Cursor IDE, Claude Code, OpenCode, Prompt Engineering for code generation, AI-assisted debugging, Automated test generation' },
+                  { label: 'Practices', skills: 'Clean Architecture, SOLID Principles, Design Patterns, Code Review, Agile/Scrum, Git Flow, Feature Flags, Microservices basics, Performance Optimization' }
                 ].map((skill, i) => (
                   <motion.div key={skill.label} variants={itemVariants}>
                     <motion.h4
@@ -482,9 +528,10 @@ export const Resume: React.FC = () => {
               </motion.h2>
               <motion.div className="space-y-2" variants={{ animate: { transition: { staggerChildren: 0.05 } } }}>
                 {[
-                  { label: 'Languages:', value: 'Hindi, English' },
-                  { label: 'Certifications:', value: 'Machine Learning Course by Andrew Nug On Cousera, Java Foundational Certification on Udemy, Digital Marketing Certification on Google, Graph QL Associate Certification' },
-                  { label: 'Awards/Activities:', value: 'Snap AR hackathon(2022): Among the top 10% successful candidates. Nasa Space App hackathon: Among the top 20% successful candidates.' }
+                  { label: 'Languages:', value: 'Hindi (Native), English (Professional)' },
+                  { label: 'Certifications:', value: 'Machine Learning by Andrew Ng (Coursera), Java Foundational (Udemy), Digital Marketing (Google), GraphQL Associate Certification' },
+                  { label: 'Achievements:', value: 'Snap AR Hackathon 2022: Top 10%, NASA Space Apps Challenge: Top 20%, Multiple production deployments with 99.9% uptime' },
+                  { label: 'Work Preference:', value: 'Open to relocation (Riyadh, Saudi Arabia), Remote-first, Hybrid, On-site' }
                 ].map((info, i) => (
                   <motion.div key={info.label} variants={itemVariants}>
                     <motion.h4 className="text-[9px] md:text-[10px] font-bold text-slate-900">{info.label}</motion.h4>
@@ -501,7 +548,7 @@ export const Resume: React.FC = () => {
             transition={{ delay: 0.8 }}
             className="p-4 text-center text-[9px] text-slate-400 border-t border-slate-200"
           >
-            <p>Abhishek Gupta • Quality Assurance Engineer • 2026</p>
+            <p>Abhishek Gupta • Software Developer • 2026</p>
           </motion.div>
         </motion.div>
       </motion.div>

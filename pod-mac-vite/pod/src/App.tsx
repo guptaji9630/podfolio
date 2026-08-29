@@ -18,6 +18,12 @@ const INITIAL_WINDOWS: AppWindow[] = [
   { id: 'games', title: 'Games', isOpen: false, isMinimized: false, zIndex: 1 },
   { id: 'dino', title: 'Dino Run', isOpen: false, isMinimized: false, zIndex: 1 },
   { id: 'pong', title: 'Pong vs AI', isOpen: false, isMinimized: false, zIndex: 1 },
+  { id: 'pdfify', title: 'PDFify', isOpen: false, isMinimized: false, zIndex: 1 },
+  { id: 'claude-proxy', title: 'Claude AI Proxy', isOpen: false, isMinimized: false, zIndex: 1 },
+  { id: 'quickdabba', title: 'Quickdabba', isOpen: false, isMinimized: false, zIndex: 1 },
+  { id: 'fitforge', title: 'FitForge', isOpen: false, isMinimized: false, zIndex: 1 },
+  { id: 'trail-mgmt', title: 'Trail Management System', isOpen: false, isMinimized: false, zIndex: 1 },
+  { id: 'portfolio-os', title: 'Portfolio OS', isOpen: false, isMinimized: false, zIndex: 1 },
 ];
 
 const App: React.FC = () => {
@@ -25,10 +31,10 @@ const App: React.FC = () => {
     storage.get(KEYS.WALLPAPER, WALLPAPERS[0]) || WALLPAPERS[0]
   );
   const [wifiEnabled, setWifiEnabled] = useState<boolean>(
-    storage.get(KEYS.WIFI_ENABLED, true)
+    storage.get(KEYS.WIFI_ENABLED, true) ?? true
   );
   const [bluetoothEnabled, setBluetoothEnabled] = useState<boolean>(
-    storage.get(KEYS.BLUETOOTH_ENABLED, true)
+    storage.get(KEYS.BLUETOOTH_ENABLED, true) ?? true
   );
   const [accentColor, setAccentColor] = useState<string>(
     storage.get(KEYS.ACCENT_COLOR, '#0a84ff') || '#0a84ff'

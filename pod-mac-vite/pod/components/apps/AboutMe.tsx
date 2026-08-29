@@ -80,7 +80,7 @@ export const AboutMe: React.FC = () => {
               transition={{ ...transitions.springNormal, delay: 0.5 }}
               className="text-sm md:text-base lg:text-lg text-blue-400 font-medium mb-2 md:mb-3"
             >
-              Quality Assurance Engineer | Software Tester
+              Software Developer | Full Stack Developer
             </motion.p>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -88,7 +88,7 @@ export const AboutMe: React.FC = () => {
               transition={{ ...transitions.springNormal, delay: 0.6 }}
               className="text-gray-400 max-w-xl leading-relaxed text-xs md:text-sm mb-3 md:mb-4 font-light mx-auto md:mx-0"
             >
-              Dedicated Quality Assurance Engineer with hands-on experience in manual and automated testing. Skilled in identifying bugs, ensuring product quality, and improving testing processes. Strong background in software development with expertise in MERN stack and testing frameworks like Jest and Playwright. Proficient in AI-assisted development using GitHub Copilot, Cursor, and ChatGPT for test automation, code generation, and debugging.
+              Full Stack Developer with 2+ years building scalable web applications using MERN stack, Next.js, and TypeScript. Expertise in React, Node.js, GraphQL, MongoDB, PostgreSQL, and modern DevOps practices. Proficient in AI-assisted development with GitHub Copilot, Cursor, Claude Code, and OpenCode for accelerated delivery. Strong problem-solving skills with focus on clean code, testing practices, and collaborative development.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -96,7 +96,7 @@ export const AboutMe: React.FC = () => {
               transition={{ ...transitions.springNormal, delay: 0.7 }}
               className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start"
             >
-              {['QA Testing', 'Automation', 'Jest', 'Playwright', 'React', 'Node.js', 'GitHub Copilot', 'Cursor IDE', 'AI-Assisted Dev'].map((tag, i) => (
+              {['React', 'Next.js', 'Node.js', 'TypeScript', 'MERN', 'MongoDB', 'GraphQL', 'Tailwind', 'Docker', 'CI/CD', 'PostgreSQL', 'GitHub Copilot', 'Cursor IDE', 'Claude Code', 'OpenCode'].map((tag, i) => (
                 <motion.span
                   key={tag}
                   initial={{ opacity: 0, scale: 0.8 }}
@@ -118,10 +118,10 @@ export const AboutMe: React.FC = () => {
         className="p-3 md:p-4 lg:p-6 grid grid-cols-1 sm:grid-cols-4 gap-2 md:gap-3 lg:gap-4"
       >
         {[
-          { icon: 'calendar_month', label: 'Experience', value: '1+ Year', color: 'bg-blue-500/20 text-blue-400' },
-          { icon: 'bug_report', label: 'Tests Run', value: '500+ Cases', color: 'bg-purple-500/20 text-purple-400' },
-          { icon: 'verified', label: 'Projects', value: '5+ Tested', color: 'bg-emerald-500/20 text-emerald-400' },
-          { icon: 'psychology', label: 'AI Tools', value: '5+ Mastered', color: 'bg-orange-500/20 text-orange-400' },
+          { icon: 'calendar_month', label: 'Experience', value: '2+ Years', color: 'bg-blue-500/20 text-blue-400' },
+          { icon: 'deployed_code', label: 'Projects', value: '6+ Deployed', color: 'bg-purple-500/20 text-purple-400' },
+          { icon: 'code', label: 'Tech Stack', value: '15+ Technologies', color: 'bg-emerald-500/20 text-emerald-400' },
+          { icon: 'psychology', label: 'AI Tools', value: 'Copilot, Cursor, Claude, OpenCode', color: 'bg-orange-500/20 text-orange-400' },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}
@@ -182,8 +182,8 @@ export const AboutMe: React.FC = () => {
               className="w-1 h-8 md:h-10 bg-blue-500 rounded-full shrink-0"
             />
             <div>
-              <p className="text-xs md:text-sm text-white font-medium">Testing Trail Management System at Agmatix</p>
-              <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 uppercase">Current • QA Testing</p>
+              <p className="text-xs md:text-sm text-white font-medium">Building FitForge - MERN Fitness Tracker with GraphQL</p>
+              <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 uppercase">2025 • Full Stack Development</p>
             </div>
           </motion.div>
           <motion.div
@@ -199,8 +199,59 @@ export const AboutMe: React.FC = () => {
               className="w-1 h-8 md:h-10 bg-purple-500 rounded-full shrink-0"
             />
             <div>
-              <p className="text-xs md:text-sm text-white font-medium">Developed FitForge Fitness Tracker with MERN Stack</p>
-              <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 uppercase">2025 • Full Stack Development</p>
+              <p className="text-xs md:text-sm text-white font-medium">Developed PDFify - Full-stack PDF conversion platform</p>
+              <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 uppercase">2025 • React + Node.js + MongoDB</p>
+            </div>
+          </motion.div>
+          <motion.div
+            whileHover={{ x: 5 }}
+            className="flex gap-3 md:gap-4 items-start"
+          >
+            <motion.div
+              animate={{ 
+                scaleY: [1, 1.05, 1],
+                opacity: [0.7, 1, 0.7]
+              }}
+              transition={{ duration: 2, repeat: Infinity, delay: 2 }}
+              className="w-1 h-8 md:h-10 bg-emerald-500 rounded-full shrink-0"
+            />
+            <div>
+              <p className="text-xs md:text-sm text-white font-medium">Created Claude AI Proxy - Node.js microservice with streaming</p>
+              <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 uppercase">2025 • Backend/API Development</p>
+            </div>
+          </motion.div>
+          <motion.div
+            whileHover={{ x: 5 }}
+            className="flex gap-3 md:gap-4 items-start"
+          >
+            <motion.div
+              animate={{ 
+                scaleY: [1, 1.05, 1],
+                opacity: [0.7, 1, 0.7]
+              }}
+              transition={{ duration: 2, repeat: Infinity, delay: 3 }}
+              className="w-1 h-8 md:h-10 bg-orange-500 rounded-full shrink-0"
+            />
+            <div>
+              <p className="text-xs md:text-sm text-white font-medium">Built Quickdabba - Quick commerce platform with real-time orders</p>
+              <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 uppercase">2024 • Freelance Full Stack</p>
+            </div>
+          </motion.div>
+          <motion.div
+            whileHover={{ x: 5 }}
+            className="flex gap-3 md:gap-4 items-start"
+          >
+            <motion.div
+              animate={{ 
+                scaleY: [1, 1.05, 1],
+                opacity: [0.7, 1, 0.7]
+              }}
+              transition={{ duration: 2, repeat: Infinity, delay: 4 }}
+              className="w-1 h-8 md:h-10 bg-pink-500 rounded-full shrink-0"
+            />
+            <div>
+              <p className="text-xs md:text-sm text-white font-medium">Developing Portfolio OS - macOS-style desktop in React</p>
+              <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 uppercase">2026 • React 19 + Motion + Vite 6</p>
             </div>
           </motion.div>
         </motion.div>

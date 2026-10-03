@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { ChatMessage } from '../types';
 import { chatService } from '../services/chatService';
 import { storage, KEYS } from '../utils/storage';
+import { CHAT_HISTORY_LIMIT } from '../config/chat';
 
 const INITIAL_MESSAGE: ChatMessage = {
   role: 'assistant',
@@ -13,14 +14,19 @@ export const useChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const requestRef = useRef<AbortController | null>(null);
+  useEffect(() => () => {
+    requestRef.current?.abort();
+    requestRef.current = null;
+  }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Load chat history from storage
   useEffect(() => {
     const savedMessages = storage.get<ChatMessage[]>(KEYS.CHAT_HISTORY);
-    if (savedMessages && savedMessages.length > 0) {
+    if (Array.isArray(savedMessages) && savedMessages.length > 0) {
       // Convert timestamp strings back to Date objects
-      const messagesWithDates = savedMessages.map(msg => ({
+      const messagesWithDates = savedMessages.filter(msg => msg && typeof msg.content === 'string' && ['user', 'assistant'].includes(msg.role)).slice(-CHAT_HISTORY_LIMIT).map(msg => ({
         ...msg,
         timestamp: msg.timestamp ? new Date(msg.timestamp) : undefined,
       }));
@@ -44,32 +50,44 @@ export const useChat = () => {
   }, [messages, isTyping]);
 
   const sendMessage = useCallback(async () => {
-    if (!input.trim() || isTyping) return;
+    if (!input.trim() || requestRef.current) return;
+    const controller = new AbortController();
+    requestRef.current = controller;
 
     const userMessage: ChatMessage = {
       role: 'user',
-      content: input.trim(),
+      content: input.trim().slice(0, 12000),
       timestamp: new Date(),
     };
 
     setInput('');
-    setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMessage].slice(-CHAT_HISTORY_LIMIT));
     setIsTyping(true);
 
-    const response = await chatService.sendMessage([...messages, userMessage], true);
-
-    const assistantMessage: ChatMessage = {
-      role: 'assistant',
-      content: response.message,
-      timestamp: new Date(),
-      toolCalls: response.toolCalls,
-    };
-
-    setMessages(prev => [...prev, assistantMessage]);
-    setIsTyping(false);
+    try {
+      const response = await chatService.sendMessage([...messages, userMessage], true, controller.signal);
+      if (controller.signal.aborted || requestRef.current !== controller) return;
+      const assistantMessage: ChatMessage = {
+        role: 'assistant',
+        content: response.message,
+        timestamp: new Date(),
+        toolCalls: response.toolCalls,
+      };
+      setMessages(prev => [...prev, assistantMessage].slice(-CHAT_HISTORY_LIMIT));
+    } catch (error) {
+      if (!controller.signal.aborted) console.error('Chat request failed:', error);
+    } finally {
+      if (requestRef.current === controller) {
+        requestRef.current = null;
+        setIsTyping(false);
+      }
+    }
   }, [input, isTyping, messages]);
 
   const clearHistory = useCallback(() => {
+    requestRef.current?.abort();
+    requestRef.current = null;
+    setIsTyping(false);
     setMessages([INITIAL_MESSAGE]);
     storage.remove(KEYS.CHAT_HISTORY);
   }, []);

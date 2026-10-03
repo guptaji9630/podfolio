@@ -116,6 +116,7 @@ export const Chat: React.FC = () => {
         <div className="flex gap-2">
           <motion.input
             value={input}
+            maxLength={12000}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."

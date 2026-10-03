@@ -1,0 +1,11 @@
+{
+  "name": "podfolio",
+  "private": true,
+  "scripts": {
+    "install:apps": "npm install --prefix pod-mac-vite/pod && npm install --prefix pod-mac-vite/pod-backend",
+    "build": "npm run build --prefix pod-mac-vite/pod && npm run build --prefix pod-mac-vite/pod-backend",
+    "typecheck": "npm run typecheck --prefix pod-mac-vite/pod && npm run type-check --prefix pod-mac-vite/pod-backend",
+    "test": "npm run test --prefix pod-mac-vite/pod && npm run test --prefix pod-mac-vite/pod-backend",
+    "validate": "npm run typecheck && npm run build && npm test"
+  }
+}

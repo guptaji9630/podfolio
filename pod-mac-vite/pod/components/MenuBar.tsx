@@ -21,8 +21,13 @@ export const MenuBar: React.FC<MenuBarProps> = ({
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      setTime(new Date());
+      timer = setTimeout(tick, 60000 - (Date.now() % 60000));
+    };
+    timer = setTimeout(tick, 60000 - (Date.now() % 60000));
+    return () => clearTimeout(timer);
   }, []);
 
   const formattedTime = time.toLocaleString('en-US', {

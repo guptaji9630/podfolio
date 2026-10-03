@@ -29,8 +29,6 @@ export default defineConfig(({ mode }) => {
           output: {
             manualChunks: {
               vendor: ['react', 'react-dom'],
-              pdf: ['html2canvas', 'jspdf'],
-              utils: ['axios'],
             }
           }
         },

@@ -106,6 +106,17 @@ export const PongGame: React.FC = () => {
     Number(localStorage.getItem('guptaos_pong_survival_highscore') || '0')
   );
   const [timeLeft, setTimeLeft] = useState(SURVIVAL_TIME);
+  const remainingTimeRef = useRef(SURVIVAL_TIME);
+  const gameLoopRef = useRef<(timestamp: number) => void>(() => {});
+  const renderRef = useRef<(canvas: HTMLCanvasElement) => void>(() => {});
+  const personalityRequestRef = useRef<AbortController | null>(null);
+  const requestPersonalityRef = useRef<() => Promise<void>>(async () => {});
+
+  useEffect(() => () => {
+    personalityRequestRef.current?.abort();
+    personalityRequestRef.current = null;
+    soundManager.stopGame('pong');
+  }, []);
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileBanner, setShowMobileBanner] = useState(false);
   const [aiPersonalityActive, setAiPersonalityActive] = useState(false);
@@ -157,6 +168,7 @@ export const PongGame: React.FC = () => {
     resetBall(Math.random() > 0.5);
     setPlayerScore(0);
     setAiScore(0);
+    remainingTimeRef.current = SURVIVAL_TIME;
     setTimeLeft(SURVIVAL_TIME);
     aiStateRef.current = {
       lastDecisionTime: 0,
@@ -272,7 +284,9 @@ export const PongGame: React.FC = () => {
   }, [difficulty, predictBallY]);
 
   const requestAIPersonality = useCallback(async () => {
-    if (aiPersonalityActive) return;
+    if (personalityRequestRef.current) return;
+    const controller = new AbortController();
+    personalityRequestRef.current = controller;
     
     setAiPersonalityActive(true);
     try {
@@ -288,7 +302,8 @@ export const PongGame: React.FC = () => {
 
 Suggest a brief strategy for the next few seconds: "aggressive" (attack), "defensive" (block), or "center" (control middle). Reply with ONLY one word.`;
 
-      const response = await chatService.sendMessage([{ role: 'user', content: prompt }]);
+      const response = await chatService.sendMessage([{ role: 'user', content: prompt }], false, controller.signal);
+      if (controller.signal.aborted) return;
       const strategy = response.message.toLowerCase().trim();
       
       const ai = aiStateRef.current;
@@ -299,10 +314,14 @@ Suggest a brief strategy for the next few seconds: "aggressive" (attack), "defen
       
       ai.strategyEndTime = Date.now() + 3000;
     } catch (err) {
+      if (controller.signal.aborted) return;
       console.warn('AI personality request failed:', err);
       aiStateRef.current.currentStrategy = null;
     } finally {
-      setAiPersonalityActive(false);
+      if (personalityRequestRef.current === controller) {
+        personalityRequestRef.current = null;
+        setAiPersonalityActive(false);
+      }
     }
   }, [mode, difficulty, aiScore, playerScore, timeLeft, aiPersonalityActive]);
 
@@ -403,7 +422,7 @@ Suggest a brief strategy for the next few seconds: "aggressive" (attack), "defen
 
         aiFrameCounterRef.current++;
         if (aiFrameCounterRef.current % 300 === 0 && Math.random() < 0.05) {
-          requestAIPersonality();
+          void requestPersonalityRef.current();
         }
 
         if (aiStateRef.current.currentStrategy && Date.now() > aiStateRef.current.strategyEndTime) {
@@ -411,18 +430,19 @@ Suggest a brief strategy for the next few seconds: "aggressive" (attack), "defen
         }
 
         if (mode === 'survival') {
-          setTimeLeft(prev => {
-            const newTime = Math.max(0, prev - FIXED_TIMESTEP / 1000);
-            if (newTime <= 0) {
-              soundManager.playWin('pong');
-              if (playerScore > highScoreSurvival) {
-                setHighScoreSurvival(playerScore);
-                localStorage.setItem('guptaos_pong_survival_highscore', String(playerScore));
-              }
-              setGameState('gameover');
+          remainingTimeRef.current = Math.max(0, remainingTimeRef.current - FIXED_TIMESTEP / 1000);
+          const displayed = Math.ceil(remainingTimeRef.current);
+          if (displayed !== timeLeft) setTimeLeft(displayed);
+          if (remainingTimeRef.current <= 0) {
+            soundManager.playWin('pong');
+            if (playerScore > highScoreSurvival) {
+              setHighScoreSurvival(playerScore);
+              localStorage.setItem('guptaos_pong_survival_highscore', String(playerScore));
             }
-            return newTime;
-          });
+            setGameState('gameover');
+            accumulatorRef.current = 0;
+            break;
+          }
         }
       }
 
@@ -431,11 +451,11 @@ Suggest a brief strategy for the next few seconds: "aggressive" (attack), "defen
     }
 
     if (canvasRef.current) {
-      render(canvasRef.current);
+      renderRef.current(canvasRef.current);
     }
 
-    if (gameState !== 'menu') {
-      animationRef.current = requestAnimationFrame(gameLoop);
+    if (gameState === 'playing' && (mode !== 'survival' || remainingTimeRef.current > 0)) {
+      animationRef.current = requestAnimationFrame(timestamp => gameLoopRef.current(timestamp));
     }
   }, [gameState, difficulty, mode, playerScore, aiScore, highScoreClassic, highScoreSurvival, timeLeft, getAIMove, createParticles, updateParticles, resetBall]);
 
@@ -522,6 +542,7 @@ Suggest a brief strategy for the next few seconds: "aggressive" (attack), "defen
           const rect = container.getBoundingClientRect();
           canvas.width = rect.width;
           canvas.height = rect.height;
+          renderRef.current(canvas);
         }
       };
       resize();
@@ -530,18 +551,29 @@ Suggest a brief strategy for the next few seconds: "aggressive" (attack), "defen
     }
   }, []);
 
+  // Refresh frame callbacks without resetting the physics accumulator on UI updates.
   useEffect(() => {
-    if (gameState === 'playing' || gameState === 'paused') {
+    gameLoopRef.current = gameLoop;
+    renderRef.current = render;
+    requestPersonalityRef.current = requestAIPersonality;
+    if (gameState !== 'playing' && canvasRef.current) render(canvasRef.current);
+  }, [gameLoop, render, requestAIPersonality, gameState]);
+
+  useEffect(() => {
+    if (gameState === 'playing') {
       lastTimeRef.current = 0;
       accumulatorRef.current = 0;
-      animationRef.current = requestAnimationFrame(gameLoop);
+      animationRef.current = requestAnimationFrame(timestamp => gameLoopRef.current(timestamp));
+    } else {
+      personalityRequestRef.current?.abort();
+      personalityRequestRef.current = null;
+      setAiPersonalityActive(false);
     }
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      if (animationRef.current !== null) cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
     };
-  }, [gameState, gameLoop]);
+  }, [gameState]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (gameState === 'setup' || gameState === 'menu') return;

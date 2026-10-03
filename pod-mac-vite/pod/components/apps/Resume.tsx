@@ -1,8 +1,6 @@
 
 import React, { useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import { transitions } from '../../src/types/motion';
 
 const sectionVariants = {
@@ -33,21 +31,25 @@ export const Resume: React.FC = () => {
     if (!resumeRef.current || isDownloading) return;
     
     setIsDownloading(true);
+    const element = resumeRef.current;
+    let canvas: HTMLCanvasElement | undefined;
+    const originalStyles = {
+      width: element.style.width,
+      height: element.style.height,
+      overflow: element.style.overflow,
+      transform: element.style.transform,
+      transformOrigin: element.style.transformOrigin,
+    };
     try {
-      const element = resumeRef.current;
-      const originalStyles = {
-        width: element.style.width,
-        height: element.style.height,
-        overflow: element.style.overflow,
-        transform: element.style.transform,
-        transformOrigin: element.style.transformOrigin,
-      };
-
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
       element.style.width = '794px';
       element.style.overflow = 'visible';
       element.style.transform = 'none';
 
-      const canvas = await html2canvas(element, {
+      canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         logging: false,
@@ -92,7 +94,6 @@ export const Resume: React.FC = () => {
           pdf.addPage();
         }
         
-        const pageHeight = Math.min(pdfHeight, remainingHeight);
         pdf.addImage(imgData, 'PNG', 0, -pageY * 0.264583 * ratio, imgWidthMm, imgHeightMm, undefined, 'FAST');
         
         remainingHeight -= pdfHeight;
@@ -104,6 +105,11 @@ export const Resume: React.FC = () => {
     } catch (error) {
       console.error('Error generating PDF:', error);
     } finally {
+      Object.assign(element.style, originalStyles);
+      if (canvas) {
+        canvas.width = 0;
+        canvas.height = 0;
+      }
       setIsDownloading(false);
     }
   };

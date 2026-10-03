@@ -31,8 +31,8 @@ app.use(
 );
 
 // Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '256kb' }));
+app.use(express.urlencoded({ extended: true, limit: '256kb' }));
 
 // Rate limiting
 app.use('/api/', apiLimiter);
@@ -58,7 +58,7 @@ app.use(errorHandler);
 
 // Start server
 const PORT = ENV.PORT;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════╗
 ║   🚀 Server Running Successfully       ║
@@ -70,15 +70,23 @@ app.listen(PORT, () => {
   `);
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  console.log('SIGINT signal received: closing HTTP server');
-  process.exit(0);
-});
+// Stop accepting requests and allow active connections to finish before exit.
+let shuttingDown = false;
+const shutdown = () => {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  const deadline = setTimeout(() => {
+    server.closeAllConnections();
+    process.exit(1);
+  }, 10000);
+  deadline.unref();
+  server.close(error => {
+    clearTimeout(deadline);
+    process.exit(error ? 1 : 0);
+  });
+  server.closeIdleConnections();
+};
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
 
 export default app;

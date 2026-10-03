@@ -3,6 +3,7 @@ import { ChatMessage, ChatApiResponse, AITool } from '../types';
 import { PROJECTS } from '../config/constants';
 import { apiClient } from './api';
 import { API_ENDPOINTS } from '../config/api.config';
+import { CHAT_CONTEXT_LIMIT } from '../config/chat';
 
 // AI Tools available to the assistant
 export const AI_TOOLS: AITool[] = [
@@ -68,17 +69,16 @@ export const AI_TOOLS: AITool[] = [
   },
 ];
 
-async function executeToolCall(name: string, args: Record<string, any>): Promise<any> {
+async function executeToolCall(name: string, args: Record<string, any>, signal?: AbortSignal): Promise<any> {
+  signal?.throwIfAborted();
   switch (name) {
     case 'send_contact_email': {
       const { subject, message, senderName, senderEmail } = args;
-      const response = await fetch(`${ENV.API_BASE_URL}/contact`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject, message, senderName, senderEmail }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to send email');
+      const response = await apiClient.post(API_ENDPOINTS.CONTACT.SEND,
+        { subject, message, senderName, senderEmail }, undefined, signal);
+      signal?.throwIfAborted();
+      if (!response.success) throw new Error(response.error?.message || 'Failed to send email');
+      const data = response.data;
       return { success: true, message: 'Email sent successfully', data };
     }
     case 'get_project_details': {
@@ -270,8 +270,11 @@ export class ChatService {
 
   async sendMessage(
     messages: ChatMessage[],
-    enableTools: boolean = ENV.ENABLE_AI_TOOLS
+    enableTools: boolean = ENV.ENABLE_AI_TOOLS,
+    signal?: AbortSignal
   ): Promise<ChatApiResponse> {
+    signal?.throwIfAborted();
+    messages = messages.slice(-CHAT_CONTEXT_LIMIT);
     const latestUserMessage = messages.filter(m => m.role === 'user').at(-1)?.content || '';
 
     try {
@@ -283,7 +286,7 @@ export class ChatService {
         const toolIntent = this.detectToolIntent(latestUserMessage);
         if (toolIntent) {
           try {
-            const result = await executeToolCall(toolIntent.name, toolIntent.arguments);
+            const result = await executeToolCall(toolIntent.name, toolIntent.arguments, signal);
             allToolCalls.push(toolIntent);
             
             // Add tool result as context for the model
@@ -294,6 +297,7 @@ export class ChatService {
               toolCalls: [{ name: toolIntent.name, arguments: toolIntent.arguments, result }],
             });
           } catch (toolError: any) {
+            signal?.throwIfAborted();
             allToolCalls.push(toolIntent);
             currentMessages.push({
               role: 'tool',
@@ -305,13 +309,14 @@ export class ChatService {
       }
 
       // Get final response from model with tool context
-      const response = await this.requestCompletion(currentMessages, false);
+      const response = await this.requestCompletion(currentMessages, false, signal);
       
       return {
         message: response.responseText || "I'm sorry, I couldn't process that request.",
         toolCalls: allToolCalls.length > 0 ? allToolCalls : undefined,
       };
     } catch (error: unknown) {
+      signal?.throwIfAborted();
       console.error('Chat service error:', error);
 
       const errorMsg = String((error as { message?: string })?.message || '');
@@ -398,8 +403,10 @@ Say "play dino" or "play pong" to launch, or open the Games app from the dock!`;
 
   private async requestCompletion(
     messages: ChatMessage[],
-    _enableTools: boolean
+    _enableTools: boolean,
+    signal?: AbortSignal
   ): Promise<{ responseText: string; toolCalls: Array<{ name: string; arguments: Record<string, any> }> }> {
+    signal?.throwIfAborted();
     const response = await apiClient.post<{ choices: Array<{ message: { content: string } }> }>(
       API_ENDPOINTS.CHAT.MESSAGE,
       {
@@ -411,8 +418,11 @@ Say "play dino" or "play pong" to launch, or open the Games app from the dock!`;
         frequency_penalty: 0,
         presence_penalty: 0,
         stream: false,
-      }
+      },
+      undefined,
+      signal
     );
+    signal?.throwIfAborted();
 
     if (!response.success || !response.data) {
       throw new Error(response.error?.message || 'Failed to get completion');
@@ -425,9 +435,17 @@ Say "play dino" or "play pong" to launch, or open the Games app from the dock!`;
   }
 
   private buildNimMessages(messages: ChatMessage[]): Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string; tool_call_id?: string }> {
+    const recent: ChatMessage[] = [];
+    let remaining = 60000 - SYSTEM_INSTRUCTION.length;
+    for (const message of messages.slice(-CHAT_CONTEXT_LIMIT).reverse()) {
+      const content = message.content.slice(0, 12000);
+      if (content.length > remaining) break;
+      recent.unshift({ ...message, content });
+      remaining -= content.length;
+    }
     return [
       { role: 'system', content: SYSTEM_INSTRUCTION },
-      ...messages.map(message => {
+      ...recent.map(message => {
         if (message.role === 'tool') {
           // For tool messages, we need to extract tool_call_id from toolCalls
           const toolCallId = message.toolCalls?.[0]?.name ? `call_${message.toolCalls[0].name}_${Date.now()}` : undefined;

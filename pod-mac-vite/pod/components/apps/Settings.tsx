@@ -1,3 +1,4 @@
+import { previewUrl, previewSrcSet } from '../../src/utils/images';
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -328,7 +329,13 @@ export const Settings: React.FC<SettingsProps> = ({
                       }`}
                     >
                       <motion.img
-                        src={url}
+                        src={previewUrl(url, 640)}
+                        srcSet={previewSrcSet(url)}
+                        sizes="(max-width: 640px) 45vw, 240px"
+                        loading="lazy"
+                        decoding="async"
+                        width={640}
+                        height={400}
                         className="w-full h-full object-cover transition-transform duration-700"
                         whileHover={{ scale: 1.08 }}
                         alt=""

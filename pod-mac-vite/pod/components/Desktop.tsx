@@ -1,18 +1,19 @@
 
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { AppLoadBoundary } from './AppLoadBoundary';
 import { AppWindow, AppId } from '../src/types';
 import { WindowFrame } from './WindowFrame';
 import { AboutMe } from './apps/AboutMe';
-import { Finder } from './apps/Finder';
-import { Mail } from './apps/Mail';
-import { Resume } from './apps/Resume';
-import { Settings } from './apps/Settings';
-import { Terminal } from './apps/Terminal';
-import { Chat } from './apps/Chat';
-import { GamesLauncher } from './apps/GamesLauncher';
-import { DinoGame } from './apps/DinoGame';
-import { PongGame } from './apps/PongGame';
-import { AnimatePresence, motion } from 'motion/react';
+const Finder = lazy(() => import('./apps/Finder').then(module => ({ default: module.Finder })));
+const Mail = lazy(() => import('./apps/Mail').then(module => ({ default: module.Mail })));
+const Resume = lazy(() => import('./apps/Resume').then(module => ({ default: module.Resume })));
+const Settings = lazy(() => import('./apps/Settings').then(module => ({ default: module.Settings })));
+const Terminal = lazy(() => import('./apps/Terminal').then(module => ({ default: module.Terminal })));
+const Chat = lazy(() => import('./apps/Chat').then(module => ({ default: module.Chat })));
+const GamesLauncher = lazy(() => import('./apps/GamesLauncher').then(module => ({ default: module.GamesLauncher })));
+const DinoGame = lazy(() => import('./apps/DinoGame').then(module => ({ default: module.DinoGame })));
+const PongGame = lazy(() => import('./apps/PongGame').then(module => ({ default: module.PongGame })));
 
 interface DesktopProps {
   windows: AppWindow[];
@@ -95,7 +96,11 @@ export const Desktop: React.FC<DesktopProps> = ({
               onClose={() => onClose(w.id)}
               onMinimize={() => onMinimize(w.id)}
             >
-              {renderAppContent(w.id)}
+              <AppLoadBoundary>
+                <Suspense fallback={<div role="status" className="p-6 text-white/70">Loading app…</div>}>
+                  {renderAppContent(w.id)}
+                </Suspense>
+              </AppLoadBoundary>
             </WindowFrame>
           </motion.div>
         ))}

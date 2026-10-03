@@ -45,6 +45,10 @@ export const AboutMe: React.FC = () => {
               <div className="absolute inset-0 bg-black/10 z-10" />
               <motion.img
                 alt="Portrait of Abhishek Gupta"
+                decoding="async"
+                fetchPriority="high"
+                width={128}
+                height={128}
                 className="w-full h-full object-cover"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZKuspfKMCIjla9em5-yyL0L2JfCUWziWNGGWvJWKAYRTFNXklC2yFMRfQSl2eA2IgjAZTKxuTdOvn6fvvDk6isxUb2USGnrC4xQryummw_OzWRHIaqGDdee3EeVUNTFPVDd1zpd5kwW0rxncdqE8t0sNoHVkgh9IY5xhaKNHK7egj8pXtDWtDk3OGTF1h3vGUxLDIMLYRXcIjCWsPimCIVP2xBvSo0EdVUSn4lsSioNlOCBUgWYMhzbS8S8R0jqKdXlm-SUYHvl8m"
                 whileHover={{ scale: 1.05 }}

@@ -24,7 +24,8 @@ export const Mail: React.FC = () => {
   // Show success notification
   useEffect(() => {
     if (formState.success) {
-      setTimeout(() => reset(), 3000);
+      const timer = setTimeout(() => reset(), 3000);
+      return () => clearTimeout(timer);
     }
   }, [formState.success, reset]);
 

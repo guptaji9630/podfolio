@@ -1,1 +1,13 @@
 AGENTS.md
+node_modules/
+dist/
+*.log
+.env*
+!.env.example
+
+# Local planning and knowledge graph artifacts
+specs/
+graphify-out/
+.specify/
+DEVELOPMENT_WORKFLOW.md
+OPENCODE_REVIEW.md

@@ -21,6 +21,7 @@ const SOUND_PRESETS: Record<SoundType, SoundConfig> = {
 
 class SoundManager {
   private ctx: AudioContext | null = null;
+  private nodes = new Map<() => void, string | undefined>();
   private globalVolume: number = 0.5;
   private gameVolumes: Record<string, number> = {};
   private initialized: boolean = false;
@@ -30,7 +31,7 @@ class SoundManager {
       this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
     if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      void this.ctx.resume().catch(() => {});
     }
     return this.ctx;
   }
@@ -76,10 +77,10 @@ class SoundManager {
   }
 
   playTone(frequency: number, duration: number, type: OscillatorType, gameId?: string, presetVolume: number = 1): void {
-    const ctx = this.getContext();
     const volume = this.getEffectiveVolume(gameId) * presetVolume;
     
     if (volume <= 0) return;
+    const ctx = this.getContext();
 
     const oscillator = ctx.createOscillator();
     const gainNode = ctx.createGain();
@@ -94,8 +95,32 @@ class SoundManager {
     oscillator.connect(gainNode);
     gainNode.connect(ctx.destination);
 
+    const disconnect = () => {
+      oscillator.disconnect();
+      gainNode.disconnect();
+      this.nodes.delete(stop);
+    };
+    const stop = () => {
+      oscillator.onended = null;
+      try { oscillator.stop(); } catch { /* Already stopped. */ }
+      disconnect();
+    };
+    this.nodes.set(stop, gameId);
+    oscillator.onended = disconnect;
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + duration);
+  }
+
+  stopGame(gameId: string): void {
+    this.nodes.forEach((owner, stop) => { if (owner === gameId) stop(); });
+  }
+
+  dispose(): void {
+    this.nodes.forEach((_, stop) => stop());
+    this.nodes.clear();
+    const ctx = this.ctx;
+    this.ctx = null;
+    if (ctx && ctx.state !== 'closed') void ctx.close().catch(() => {});
   }
 
   play(soundType: SoundType, gameId?: string): void {

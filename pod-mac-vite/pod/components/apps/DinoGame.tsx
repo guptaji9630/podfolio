@@ -1,3 +1,4 @@
+import { DinoSoundManager } from '../../src/utils/dinoSound';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { Volume2, VolumeX, Maximize, Minimize } from 'lucide-react';
@@ -158,65 +159,6 @@ function drawSprite(
   }
 }
 
-class SoundManager {
-  private ctx: AudioContext | null = null;
-  private enabled = true;
-  private unlocked = false;
-
-  private ensure() {
-    if (!this.ctx) {
-      try {
-        this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      } catch {
-        this.enabled = false;
-      }
-    }
-    return this.ctx;
-  }
-
-  unlock() {
-    if (this.unlocked) return;
-    const ctx = this.ensure();
-    if (ctx && ctx.state === 'suspended') {
-      ctx.resume().then(() => { this.unlocked = true; });
-    } else {
-      this.unlocked = true;
-    }
-  }
-
-  setEnabled(v: boolean) {
-    this.enabled = v;
-  }
-
-  isEnabled() {
-    return this.enabled;
-  }
-
-  private beep(freq: number, duration: number, type: OscillatorType, vol: number) {
-    if (!this.enabled) return;
-    const ctx = this.ensure();
-    if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = type;
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(vol, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + duration);
-  }
-
-  jump() { this.beep(600, 0.08, 'square', 0.05); }
-  point() { this.beep(900, 0.06, 'square', 0.04); }
-  milestone() { this.beep(1200, 0.15, 'sine', 0.08); }
-  death() {
-    this.beep(150, 0.15, 'sawtooth', 0.08);
-    setTimeout(() => this.beep(100, 0.2, 'sawtooth', 0.07), 80);
-  }
-}
 
 function getSkyColor(score: number): string {
   const cycle = Math.floor(score / DAY_NIGHT_CYCLE) % 2;
@@ -291,7 +233,11 @@ export const DinoGame: React.FC = () => {
   const [soundOn, setSoundOn] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [containerSize, setContainerSize] = useState({ width: LOGICAL_WIDTH, height: LOGICAL_HEIGHT });
-  const soundRef = useRef(new SoundManager());
+  const soundRef = useRef(new DinoSoundManager());
+  useEffect(() => {
+    const sound = soundRef.current;
+    return () => sound.dispose();
+  }, []);
   const [isNight, setIsNight] = useState(false);
 
   // Refs to track last synced values to avoid unnecessary re-renders

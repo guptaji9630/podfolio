@@ -1,3 +1,4 @@
+import { previewUrl, previewSrcSet } from '../../src/utils/images';
 
 'use client';
 
@@ -112,7 +113,13 @@ export const Finder: React.FC = () => {
                   className="w-full aspect-square rounded-lg md:rounded-xl overflow-hidden border border-white/10 shadow-md mb-2"
                 >
                   <motion.img
-                    src={p.image}
+                    src={previewUrl(p.image, 640)}
+                        srcSet={previewSrcSet(p.image)}
+                        sizes="(max-width: 640px) 45vw, 240px"
+                        loading="lazy"
+                        decoding="async"
+                        width={640}
+                        height={640}
                     className="w-full h-full object-cover transition-transform duration-700"
                     whileHover={{ scale: 1.1 }}
                     alt={p.name}

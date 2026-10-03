@@ -6,6 +6,7 @@ import type { AppWindow, AppId } from './types';
 import { useWindowManager } from './hooks/useWindowManager';
 import { WALLPAPERS } from './config/constants';
 import { storage, KEYS } from './utils/storage';
+import { soundManager } from './utils/sound';
 
 const INITIAL_WINDOWS: AppWindow[] = [
   { id: 'about', title: 'About Abhishek', isOpen: true, isMinimized: false, zIndex: 10 },
@@ -21,6 +22,7 @@ const INITIAL_WINDOWS: AppWindow[] = [
 ];
 
 const App: React.FC = () => {
+  useEffect(() => () => soundManager.dispose(), []);
   const [wallpaper, setWallpaper] = useState<string>(
     storage.get(KEYS.WALLPAPER, WALLPAPERS[0]) || WALLPAPERS[0]
   );

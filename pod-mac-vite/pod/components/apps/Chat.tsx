@@ -1,3 +1,4 @@
+import { CHAT_INPUT_LIMIT } from '../../src/config/chat';
 import React from 'react';
 import { useChat } from '../../src/hooks/useChat';
 import { formatRelativeTime } from '../../src/utils/formatters';
@@ -116,7 +117,7 @@ export const Chat: React.FC = () => {
         <div className="flex gap-2">
           <motion.input
             value={input}
-            maxLength={12000}
+            maxLength={CHAT_INPUT_LIMIT}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."

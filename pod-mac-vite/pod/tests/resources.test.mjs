@@ -143,3 +143,60 @@ test('failed writes are not retried and completion context stays bounded', async
     await assert.rejects(chatService.sendMessage([{ role: 'user', content: 'play dino' }], true, controller.signal), { name: 'AbortError' });
   } finally { globalThis.fetch = originalFetch; }
 });
+
+
+test('Dino disconnects naturally ended and already-stopped nodes exactly once', async () => {
+  const nodes = [];
+  let closed = false;
+  class AudioContext {
+    state = 'running';
+    currentTime = 0;
+    createOscillator() {
+      const node = {
+        frequency: {}, disconnects: 0, alreadyStopped: false,
+        connect() {}, start() {},
+        stop() { if (this.alreadyStopped) throw new DOMException('Already stopped', 'InvalidStateError'); },
+        disconnect() { this.disconnects++; },
+      };
+      nodes.push(node);
+      return node;
+    }
+    createGain() {
+      const node = { disconnects: 0, gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {} }, connect() {}, disconnect() { this.disconnects++; } };
+      nodes.push(node);
+      return node;
+    }
+    close() { closed = true; this.state = 'closed'; return Promise.resolve(); }
+  }
+  globalThis.window = { AudioContext };
+  try {
+    const { DinoSoundManager } = await load('src/utils/dinoSound.ts');
+    const sound = new DinoSoundManager();
+    sound.jump();
+    nodes[0].alreadyStopped = true;
+    nodes[0].onended(); // Natural completion removes this sound from disposal ownership.
+    sound.jump();
+    nodes[2].alreadyStopped = true; // Ended event has not been delivered yet.
+    sound.dispose();
+    sound.dispose();
+    assert.ok(closed);
+    assert.ok(nodes.every(node => node.disconnects === 1));
+  } finally { delete globalThis.window; }
+});
+
+test('completed requests remove cancellation listeners even when abort never fires', async () => {
+  const originalFetch = globalThis.fetch;
+  const controller = new AbortController();
+  const signal = controller.signal;
+  const listeners = new Set();
+  const add = signal.addEventListener.bind(signal);
+  const remove = signal.removeEventListener.bind(signal);
+  signal.addEventListener = (event, listener, options) => { if (event === 'abort') listeners.add(listener); add(event, listener, options); };
+  signal.removeEventListener = (event, listener, options) => { if (event === 'abort') listeners.delete(listener); remove(event, listener, options); };
+  globalThis.fetch = async () => ({ ok: true, json: async () => ({ ready: true }) });
+  try {
+    const result = await apiClient.get('/health', undefined, signal);
+    assert.equal(result.success, true);
+    assert.equal(listeners.size, 0, 'once does not remove a listener until the event fires');
+  } finally { globalThis.fetch = originalFetch; }
+});

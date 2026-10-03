@@ -3,7 +3,7 @@ import { ChatMessage, ChatApiResponse, AITool } from '../types';
 import { PROJECTS } from '../config/constants';
 import { apiClient } from './api';
 import { API_ENDPOINTS } from '../config/api.config';
-import { CHAT_CONTEXT_LIMIT } from '../config/chat';
+import { CHAT_CONTEXT_LIMIT, CHAT_INPUT_LIMIT } from '../config/chat';
 
 // AI Tools available to the assistant
 export const AI_TOOLS: AITool[] = [
@@ -438,7 +438,7 @@ Say "play dino" or "play pong" to launch, or open the Games app from the dock!`;
     const recent: ChatMessage[] = [];
     let remaining = 60000 - SYSTEM_INSTRUCTION.length;
     for (const message of messages.slice(-CHAT_CONTEXT_LIMIT).reverse()) {
-      const content = message.content.slice(0, 12000);
+      const content = message.content.slice(0, CHAT_INPUT_LIMIT);
       if (content.length > remaining) break;
       recent.unshift({ ...message, content });
       remaining -= content.length;

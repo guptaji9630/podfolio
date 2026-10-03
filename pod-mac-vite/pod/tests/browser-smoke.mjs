@@ -32,8 +32,21 @@ console.log('PASS wallpaper lazy responsive previews',imgs.length);
 await closeTop();
 await page.getByRole('button',{name:'smart_toy AI Assistant'}).click();
 await page.locator('input').waitFor();
-let resolveChat;
-await page.route('**/api/nim/chat/completions',route=>new Promise(resolve=>{resolveChat=async()=>{try{await route.fulfill({json:{choices:[{message:{content:'OBSOLETE REPLY'}}]}});}catch{}resolve();};}));
+// Simulate an input update that bypasses the browser's maxlength enforcement.
+await page.locator('input').evaluate(input => {
+  const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+  set.call(input, 'a'.repeat(12005));
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+});
+assert.equal((await page.locator('input').inputValue()).length,12000);
+console.log('PASS programmatic oversized chat input is clamped');
+let resolveChat; let completionRequests=0;
+const waitForCompletions = async (expected) => {
+  const deadline = Date.now() + 20000;
+  while (completionRequests < expected && Date.now() < deadline) await page.waitForTimeout(100);
+  assert.ok(completionRequests >= expected, `Expected ${expected} completions; saw ${completionRequests}`);
+};
+await page.route('**/api/nim/chat/completions',route=>new Promise(resolve=>{completionRequests++;resolveChat=async()=>{try{await route.fulfill({json:{choices:[{message:{content:'OBSOLETE REPLY'}}]}});}catch{}resolve();};}));
 await page.locator('input').fill('Tell me about QA skills');await page.locator('input').press('Enter');
 await page.waitForTimeout(100);
 await page.getByRole('button',{name:'delete Clear'}).click();
@@ -78,22 +91,26 @@ console.log('PASS failed PDF export restores live styles');
 await closeTop();
 await page.evaluate(()=>{
  window.__countdowns=[];
+ Math.random=()=>0; // Deterministically request AI personality at each five-second interval.
  const draw=CanvasRenderingContext2D.prototype.fillText;
  CanvasRenderingContext2D.prototype.fillText=function(text,...args){if(/^\d+s$/.test(text))window.__countdowns.push(text);return draw.call(this,text,...args);};
  window.postMessage({type:'LAUNCH_GAME',payload:{gameId:'pong',mode:'survival'}},location.origin);
 });
 await page.getByRole('button',{name:'Start Game',exact:true}).click();
-await page.waitForTimeout(3300);
+await waitForCompletions(2);
 const ticks=await page.evaluate(()=>[...new Set(window.__countdowns)]);
 assert.ok(ticks.includes('60s') && ticks.includes('58s'));
 await page.keyboard.press('p');await page.waitForTimeout(300);
+await resolveChat?.(); // A reply arriving after pause must not keep the request owned.
 const count=await page.evaluate(()=>window.__countdowns.length);
 await page.waitForTimeout(300);
 assert.equal(await page.evaluate(()=>window.__countdowns.length),count);
-await page.keyboard.press('p');await page.waitForTimeout(1000);
+await page.keyboard.press('p');
+await waitForCompletions(3);
+await resolveChat?.();
 assert.ok(await page.evaluate(()=>window.__countdowns.length)>count);
 await closeTop();
-console.log('PASS Pong countdown, pause and resume',ticks);
+console.log('PASS Pong countdown, pause/resume and personality cancellation recovery',ticks);
 await page.screenshot({path:process.env.PODFOLIO_DESKTOP_SCREENSHOT || '/tmp/podfolio-desktop.png'});
 await page.setViewportSize({width:390,height:844});
 await page.getByRole('button',{name:'settings Settings'}).click();

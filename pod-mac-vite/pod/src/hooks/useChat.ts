@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { ChatMessage } from '../types';
 import { chatService } from '../services/chatService';
 import { storage, KEYS } from '../utils/storage';
-import { CHAT_HISTORY_LIMIT } from '../config/chat';
+import { CHAT_HISTORY_LIMIT, CHAT_INPUT_LIMIT } from '../config/chat';
 
 const INITIAL_MESSAGE: ChatMessage = {
   role: 'assistant',
@@ -12,7 +12,10 @@ const INITIAL_MESSAGE: ChatMessage = {
 
 export const useChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
-  const [input, setInput] = useState('');
+  const [input, setInputValue] = useState('');
+  const setInput = useCallback((value: string) => {
+    setInputValue(value.slice(0, CHAT_INPUT_LIMIT));
+  }, []);
   const [isTyping, setIsTyping] = useState(false);
   const requestRef = useRef<AbortController | null>(null);
   useEffect(() => () => {
@@ -56,7 +59,7 @@ export const useChat = () => {
 
     const userMessage: ChatMessage = {
       role: 'user',
-      content: input.trim().slice(0, 12000),
+      content: input.trim().slice(0, CHAT_INPUT_LIMIT),
       timestamp: new Date(),
     };
 

@@ -122,7 +122,7 @@ export const AboutMe: React.FC = () => {
         className="p-3 md:p-4 lg:p-6 grid grid-cols-1 sm:grid-cols-4 gap-2 md:gap-3 lg:gap-4"
       >
         {[
-          { icon: 'calendar_month', label: 'Experience', value: '1+ Year', color: 'bg-blue-500/20 text-blue-400' },
+          { icon: 'calendar_month', label: 'Experience', value: '3+ Year', color: 'bg-blue-500/20 text-blue-400' },
           { icon: 'bug_report', label: 'Tests Run', value: '500+ Cases', color: 'bg-purple-500/20 text-purple-400' },
           { icon: 'verified', label: 'Projects', value: '5+ Tested', color: 'bg-emerald-500/20 text-emerald-400' },
           { icon: 'psychology', label: 'AI Tools', value: '5+ Mastered', color: 'bg-orange-500/20 text-orange-400' },

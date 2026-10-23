@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import type { MCPConnectionConfig } from '../types/mcp.types.js';
+
 export const ENV = {
   PORT: parseInt(process.env.PORT || '3000', 10),
   NODE_ENV: process.env.NODE_ENV || 'development',
@@ -18,6 +20,15 @@ export const ENV = {
   ALLOWED_ORIGINS: (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(','),
   RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX || '100'),
   RATE_LIMIT_WINDOW: parseInt(process.env.RATE_LIMIT_WINDOW || '900000'), // 15 min
+
+  // MCP Configuration
+  MCP_CONNECTIONS: (() => {
+    try {
+      return JSON.parse(process.env.MCP_CONNECTIONS || '[]') as MCPConnectionConfig[];
+    } catch {
+      return [];
+    }
+  })(),
 };
 
 // Validate required env vars

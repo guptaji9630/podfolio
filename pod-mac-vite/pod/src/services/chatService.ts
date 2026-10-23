@@ -4,6 +4,8 @@ import { PROJECTS } from '../config/constants';
 import { apiClient } from './api';
 import { API_ENDPOINTS } from '../config/api.config';
 import { CHAT_CONTEXT_LIMIT, CHAT_INPUT_LIMIT } from '../config/chat';
+import { mcpService } from './mcpService';
+import { MCPTool } from '../types/mcp.types';
 
 // AI Tools available to the assistant
 export const AI_TOOLS: AITool[] = [
@@ -228,7 +230,7 @@ Keep responses concise like a chat message — no unnecessary lectures, just cle
 export class ChatService {
   constructor() {}
 
-  private detectToolIntent(message: string): { name: string; arguments: Record<string, any> } | null {
+  private detectToolIntent(message: string, availableTools: (AITool | MCPTool)[] = AI_TOOLS): { name: string; arguments: Record<string, any> } | null {
     const lower = message.toLowerCase();
     
     // Check for specific game launch requests FIRST (before general game queries)
@@ -265,6 +267,14 @@ export class ChatService {
       }};
     }
     
+    // Check for MCP tools by name matching
+    for (const tool of availableTools) {
+      const keywords = tool.name.toLowerCase().split('_');
+      if (keywords.some(k => lower.includes(k))) {
+        return { name: tool.name, arguments: {} };
+      }
+    }
+    
     return null;
   }
 
@@ -281,9 +291,20 @@ export class ChatService {
       const allToolCalls: Array<{ name: string; arguments: Record<string, any> }> = [];
       let currentMessages = [...messages];
 
+      // Fetch MCP tools if enabled
+      let mcpTools: MCPTool[] = [];
+      if (enableTools) {
+        try {
+          const mcpToolResults = await mcpService.listTools();
+          mcpTools = mcpToolResults.flatMap(r => r.tools);
+        } catch {
+          // MCP tools unavailable, continue with local tools only
+        }
+      }
+
       // Local tool detection and execution (since NIM API doesn't support function calling reliably)
       if (enableTools) {
-        const toolIntent = this.detectToolIntent(latestUserMessage);
+        const toolIntent = this.detectToolIntent(latestUserMessage, [...AI_TOOLS, ...mcpTools]);
         if (toolIntent) {
           try {
             const result = await executeToolCall(toolIntent.name, toolIntent.arguments, signal);

@@ -18,6 +18,7 @@ export interface AgentMessage {
 export interface AgentResponse {
   message: string;
   toolCalls?: Array<{ name: string; arguments: Record<string, unknown>; result: unknown }>;
+  canvasUrl?: string; // URL to view the canvas (for excalidraw MCP)
 }
 
 export class AgentService {
@@ -90,6 +91,17 @@ export class AgentService {
       }
       return { success: true, message: `Launching ${gameId}${mode ? ` (${mode} mode)` : ''}...` };
     });
+
+    this.localTools.set('list_available_tools', async () => {
+      const tools = this.getAvailableTools();
+      return { 
+        tools: tools.map(t => ({ 
+          name: t.name, 
+          description: t.description || 'No description',
+          type: t.type
+        }))
+      };
+    });
   }
 
   getAvailableTools(): AgentTool[] {
@@ -111,9 +123,15 @@ export class AgentService {
       });
     }
 
-    for (const [serverId, client] of mcpToolRegistry.getConnectedClients()) {
+    console.log('[AgentService] Getting available tools...');
+    const connectedClients = mcpToolRegistry.getConnectedClients();
+    console.log('[AgentService] Connected clients:', connectedClients.size);
+    
+    for (const [serverId, client] of connectedClients) {
+      console.log('[AgentService] Checking server:', serverId, 'connected:', client.isConnected());
       const serverInfo = client.getServerInfo();
       if (serverInfo) {
+        console.log('[AgentService] Server info:', serverId, 'tools:', serverInfo.tools.length);
         for (const tool of serverInfo.tools) {
           tools.push({
             name: tool.name,
@@ -123,9 +141,12 @@ export class AgentService {
             serverId,
           });
         }
+      } else {
+        console.log('[AgentService] No server info for:', serverId);
       }
     }
 
+    console.log('[AgentService] Total tools:', tools.length);
     return tools;
   }
 
@@ -185,15 +206,54 @@ export class AgentService {
       await emailService.sendAgentOutput(emailData);
     }
 
-    return { message: aiResponse, toolCalls };
+    return { 
+      message: aiResponse, 
+      toolCalls,
+      // Include canvas URL if MCP tools were used (excalidraw canvas)
+      canvasUrl: toolCalls.some(tc => tc.name.startsWith('create_') || tc.name.startsWith('update_') || tc.name.startsWith('delete_') || tc.name.startsWith('batch_') || tc.name === 'clear_canvas' || tc.name === 'export_to_image' || tc.name === 'get_canvas_screenshot' || tc.name === 'describe_scene' || tc.name === 'set_viewport' || tc.name === 'read_diagram_guide' || tc.name === 'export_to_excalidraw_url') 
+        ? 'http://localhost:3001' 
+        : undefined
+    };
   }
 
   private detectToolIntent(message: string, tools: AgentTool[]): { name: string; arguments: Record<string, unknown> } | null {
     const lower = message.toLowerCase();
     
+    // Check for "list tools" / "what tools" / "available tools" queries
+    if (/(what tools|list tools|available tools|show tools|tools available)/.test(lower)) {
+      return { name: 'list_available_tools', arguments: {} };
+    }
+
+    // Check for excalidraw/drawing related queries - prefer create_from_mermaid for flowcharts/diagrams
+    if (/(draw|diagram|sketch|excalidraw|whiteboard|chart|flowchart|mind.?map|flow.?chart)/.test(lower)) {
+      // Find excalidraw-related MCP tools - prefer create_from_mermaid for flowcharts
+      for (const tool of tools) {
+        const toolName = tool.name.toLowerCase();
+        const toolDesc = tool.description?.toLowerCase() || '';
+        
+        // For flowchart/diagram requests, prefer create_from_mermaid
+        if ((/flowchart|flow.?chart|diagram/.test(lower)) && toolName === 'create_from_mermaid') {
+          return { name: tool.name, arguments: { mermaidDiagram: 'flowchart TD\n    A[Start] --> B[Process]\n    B --> C[Decision]\n    C -->|Yes| D[End]\n    C -->|No| B' } };
+        }
+        
+        // For general draw requests, use create_element with defaults
+        if (toolName === 'create_element') {
+          return { name: tool.name, arguments: { type: 'rectangle', x: 100, y: 100, width: 200, height: 100, text: 'Step 1' } };
+        }
+        
+        // Other excalidraw tools
+        if (toolName.includes('excalidraw') || toolName.includes('draw') || toolName.includes('diagram') || toolDesc.includes('excalidraw') || toolDesc.includes('draw') || toolDesc.includes('diagram') || toolDesc.includes('flowchart') || toolDesc.includes('mermaid')) {
+          return { name: tool.name, arguments: {} };
+        }
+      }
+    }
+    
+    // Check for MCP tools by name matching (name or description)
     for (const tool of tools) {
       const keywords = tool.name.toLowerCase().split('_');
-      if (keywords.some(k => lower.includes(k))) {
+      const descKeywords = (tool.description || '').toLowerCase().split(/[\s_]+/);
+      const allKeywords = [...keywords, ...descKeywords];
+      if (allKeywords.some(k => k.length > 2 && lower.includes(k))) {
         return { name: tool.name, arguments: {} };
       }
     }

@@ -2,7 +2,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import { MCPConnectionConfig, MCPTool, MCPToolCall, MCPToolResult, MCPServerInfo, MCPResource } from '../types/mcp.types.js';
+import { MCPConnectionConfig, MCPTool, MCPToolCall, MCPToolResult, MCPServerInfo, MCPResource, MCPPrompt } from '../types/mcp.types.js';
 
 export class MCPClient {
   private client: Client | null = null;
@@ -32,10 +32,12 @@ export class MCPClient {
         break;
       case 'stdio':
         if (!this.config.command) throw new Error('STDIO transport requires command');
+        // Merge custom env with process.env so child process has PATH, etc.
+        const mergedEnv: Record<string, string> = { ...process.env as Record<string, string>, ...(this.config.env || {}) };
         this.transport = new StdioClientTransport({
           command: this.config.command,
           args: this.config.args || [],
-          env: this.config.env,
+          env: mergedEnv,
         });
         break;
       default:
@@ -49,10 +51,26 @@ export class MCPClient {
     await this.client.connect(this.transport);
     this.connected = true;
 
-    // Fetch server info
-    const toolsResult = await this.client.listTools();
-    const resourcesResult = await this.client.listResources();
-    const promptsResult = await this.client.listPrompts();
+    // Fetch server info - handle servers that don't implement all methods
+    let toolsResult, resourcesResult, promptsResult;
+    try {
+      toolsResult = await this.client.listTools();
+    } catch (e) {
+      console.warn('MCP server does not support listTools:', e);
+      toolsResult = { tools: [] };
+    }
+    try {
+      resourcesResult = await this.client.listResources();
+    } catch (e) {
+      console.warn('MCP server does not support listResources:', e);
+      resourcesResult = { resources: [] };
+    }
+    try {
+      promptsResult = await this.client.listPrompts();
+    } catch (e) {
+      console.warn('MCP server does not support listPrompts:', e);
+      promptsResult = { prompts: [] };
+    }
 
     this.serverInfo = {
       id: this.config.id,
@@ -117,13 +135,33 @@ export class MCPClient {
 
   async listResources(): Promise<MCPResource[]> {
     if (!this.client || !this.connected) throw new Error('Not connected');
-    const result = await this.client.listResources();
-    return result.resources.map((r: { uri: string; name: string; description?: string; mimeType?: string }) => ({
-      uri: r.uri,
-      name: r.name,
-      description: r.description,
-      mimeType: r.mimeType,
-    }));
+    try {
+      const result = await this.client.listResources();
+      return result.resources.map((r: { uri: string; name: string; description?: string; mimeType?: string }) => ({
+        uri: r.uri,
+        name: r.name,
+        description: r.description,
+        mimeType: r.mimeType,
+      }));
+    } catch (e) {
+      console.warn('MCP server does not support listResources:', e);
+      return [];
+    }
+  }
+
+  async listPrompts(): Promise<MCPPrompt[]> {
+    if (!this.client || !this.connected) throw new Error('Not connected');
+    try {
+      const result = await this.client.listPrompts();
+      return result.prompts.map((p: { name: string; description?: string; arguments?: Array<{ name: string; description?: string; required?: boolean }> }) => ({
+        name: p.name,
+        description: p.description,
+        arguments: p.arguments,
+      }));
+    } catch (e) {
+      console.warn('MCP server does not support listPrompts:', e);
+      return [];
+    }
   }
 
   getServerInfo(): MCPServerInfo | null {

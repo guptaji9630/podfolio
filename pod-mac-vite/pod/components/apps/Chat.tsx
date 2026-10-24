@@ -45,15 +45,27 @@ export const Chat: React.FC = () => {
           />
           <span className="text-xs md:text-sm text-white/70">AI Assistant Online</span>
         </div>
-        <motion.button
-          onClick={clearHistory}
-          whileHover={{ scale: 1.1, rotate: 10 }}
-          whileTap={{ scale: 0.9 }}
-          className="text-[11px] md:text-xs text-white/40 hover:text-white/70 flex items-center gap-1"
-        >
-          <span className="material-symbols-outlined text-[14px] md:text-[16px]">delete</span>
-          <span className="hidden sm:inline">Clear</span>
-        </motion.button>
+        <div className="flex items-center gap-2">
+          <a
+            href="http://localhost:3001"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 px-2 py-1 text-[11px] md:text-xs text-white/60 hover:text-white/90 transition-colors rounded bg-white/5 hover:bg-white/10"
+            title="Open Excalidraw Canvas"
+          >
+            <span className="material-symbols-outlined text-[14px] md:text-[16px]">draw</span>
+            <span className="hidden sm:inline">Canvas</span>
+          </a>
+          <motion.button
+            onClick={clearHistory}
+            whileHover={{ scale: 1.1, rotate: 10 }}
+            whileTap={{ scale: 0.9 }}
+            className="text-[11px] md:text-xs text-white/40 hover:text-white/70 flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-[14px] md:text-[16px]">delete</span>
+            <span className="hidden sm:inline">Clear</span>
+          </motion.button>
+        </div>
       </motion.div>
 
       {/* Messages */}
@@ -82,6 +94,18 @@ export const Chat: React.FC = () => {
                 whileHover={{ scale: 1.01 }}
               >
                 <div className="whitespace-pre-wrap break-words">{m.content}</div>
+                {(m as any).canvasUrl && m.role === 'assistant' && (
+                  <a
+                    href={(m as any).canvasUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 mt-2 px-2 py-1 text-[10px] md:text-xs text-primary hover:text-primary/80 transition-colors bg-primary/10 rounded"
+                    title="Open Excalidraw Canvas"
+                  >
+                    <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                    <span className="hidden sm:inline">Open in Excalidraw Canvas</span>
+                  </a>
+                )}
                 {m.timestamp && (
                   <div className="text-[9px] md:text-[10px] text-white/30 mt-1">
                     {formatRelativeTime(m.timestamp)}

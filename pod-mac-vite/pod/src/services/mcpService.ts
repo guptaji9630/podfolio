@@ -4,8 +4,8 @@ import { MCPTool, MCPConnectionConfig, MCPToolResult } from '../types/mcp.types'
 
 export class MCPService {
   async getConnections(): Promise<MCPConnectionConfig[]> {
-    const response = await apiClient.get<MCPConnectionConfig[]>(API_ENDPOINTS.MCP.CONNECTIONS);
-    return response.data || [];
+    const response = await apiClient.get<{ success: boolean; data: MCPConnectionConfig[] }>(API_ENDPOINTS.MCP.CONNECTIONS);
+    return response.data?.data || [];
   }
 
   async addConnection(config: MCPConnectionConfig): Promise<void> {
@@ -25,8 +25,8 @@ export class MCPService {
   }
 
   async listTools(): Promise<{ serverId: string; tools: MCPTool[] }[]> {
-    const response = await apiClient.get<{ serverId: string; tools: MCPTool[] }[]>(API_ENDPOINTS.MCP.TOOLS);
-    return response.data || [];
+    const response = await apiClient.get<{ success: boolean; data: { serverId: string; tools: MCPTool[] }[] }>(API_ENDPOINTS.MCP.TOOLS);
+    return response.data?.data || [];
   }
 
   async callTool(serverId: string, name: string, args: Record<string, unknown>): Promise<MCPToolResult> {

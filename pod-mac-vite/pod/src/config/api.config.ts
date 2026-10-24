@@ -32,6 +32,7 @@ export const API_ENDPOINTS = {
     TOOLS: '/api/mcp/tools',
     CALL_TOOL: '/api/mcp/tools/call',
     AGENT_CHAT: '/api/mcp/agent/chat',
+    AGENT_SEND_OUTPUT: '/api/mcp/agent/send-output',
   },
 } as const;
 

@@ -55,9 +55,15 @@ export class MCPToolRegistry {
   async listAllTools(): Promise<{ serverId: string; tools: MCPTool[] }[]> {
     const results: { serverId: string; tools: MCPTool[] }[] = [];
     for (const [serverId, client] of this.clients) {
+      console.log(`Checking MCP server: ${serverId}, connected: ${client.isConnected()}`);
       if (client.isConnected()) {
-        const tools = await client.listTools();
-        results.push({ serverId, tools });
+        try {
+          const tools = await client.listTools();
+          console.log(`MCP server ${serverId} returned ${tools.length} tools:`, tools.map(t => t.name));
+          results.push({ serverId, tools });
+        } catch (e) {
+          console.error(`Failed to list tools for ${serverId}:`, e);
+        }
       }
     }
     return results;

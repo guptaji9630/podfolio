@@ -174,17 +174,30 @@ export const MCPManager: React.FC = () => {
             </div>
           )}
           {(newConnection.transport === 'stdio') && (
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Command</label>
-              <input
-                type="text"
-                placeholder="npx"
-                value={newConnection.command || ''}
-                onChange={e => setNewConnection({ ...newConnection, command: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-[var(--color-bg-tertiary)] border border-[var(--color-border-default)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-primary)]"
-                required
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Command</label>
+                <input
+                  type="text"
+                  placeholder="npx"
+                  value={newConnection.command || ''}
+                  onChange={e => setNewConnection({ ...newConnection, command: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--color-bg-tertiary)] border border-[var(--color-border-default)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-primary)]"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Args (space-separated)</label>
+                <input
+                  type="text"
+                  placeholder='-y mcp-excalidraw-server'
+                  value={newConnection.args?.join(' ') || ''}
+                  onChange={e => setNewConnection({ ...newConnection, args: e.target.value.trim() ? e.target.value.trim().split(/\s+/) : [] })}
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--color-bg-tertiary)] border border-[var(--color-border-default)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-primary)]"
+                />
+                <p className="text-xs text-[var(--color-text-secondary)] mt-1">Enter arguments separated by spaces (e.g., "-y mcp-excalidraw-server")</p>
+              </div>
+            </>
           )}
           <div className="flex gap-2">
             <button

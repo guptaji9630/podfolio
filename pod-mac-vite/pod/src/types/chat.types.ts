@@ -22,6 +22,7 @@ export interface ChatApiResponse {
   toolCalls?: ToolCall[];
   conversationId?: string;
   error?: string;
+  canvasUrl?: string;
 }
 
 export interface AITool {

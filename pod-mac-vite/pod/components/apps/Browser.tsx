@@ -487,7 +487,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, delay }) => {
           animate={{ opacity: 1 }}
           className="flex flex-wrap gap-2"
         >
-          {project.techStack.slice(0, 7).map((tech, i) => (
+          {project.techStack?.slice(0, 7).map((tech, i) => (
             <motion.span
               key={i}
               whileHover={{ scale: 1.05, y: -1, borderColor: 'var(--color-accent-primary)' }}
@@ -496,7 +496,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, delay }) => {
               {tech}
             </motion.span>
           ))}
-          {project.techStack.length > 7 && (
+          {project.techStack && project.techStack.length > 7 && (
             <span className="px-2.5 py-1 rounded-lg bg-[var(--color-accent-primary)]/15 text-[var(--color-accent-primary)] text-caption font-medium border border-[var(--color-accent-primary)]/30">
               +{project.techStack.length - 7}
             </span>
@@ -628,7 +628,7 @@ const ProjectListItem: React.FC<ProjectListItemProps> = ({ project, delay }) => 
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-wrap gap-2 pt-3 border-t border-[var(--color-border-default)]"
           >
-            {project.techStack.slice(0, 10).map((tech, i) => (
+            {project.techStack?.slice(0, 10).map((tech, i) => (
               <motion.span
                 key={i}
                 whileHover={{ scale: 1.05, y: -1, borderColor: 'var(--color-accent-primary)' }}
@@ -637,7 +637,7 @@ const ProjectListItem: React.FC<ProjectListItemProps> = ({ project, delay }) => 
                 {tech}
               </motion.span>
             ))}
-            {project.techStack.length > 10 && (
+            {project.techStack && project.techStack.length > 10 && (
               <span className="px-3 py-1 rounded-lg bg-[var(--color-accent-primary)]/15 text-[var(--color-accent-primary)] text-caption font-medium border border-[var(--color-accent-primary)]/30">
                 +{project.techStack.length - 10} more
               </span>

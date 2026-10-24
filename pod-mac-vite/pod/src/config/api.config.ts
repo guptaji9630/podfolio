@@ -22,6 +22,18 @@ export const API_ENDPOINTS = {
     LIST: '/projects',
     DETAIL: (id: string) => `/api/projects/${id}`,
   },
+
+  // MCP endpoints
+  MCP: {
+    CONNECTIONS: '/api/mcp/connections',
+    CONNECT: (id: string) => `/api/mcp/connections/${id}/connect`,
+    DISCONNECT: (id: string) => `/api/mcp/connections/${id}/disconnect`,
+    CONNECTION: (id: string) => `/api/mcp/connections/${id}`,
+    TOOLS: '/api/mcp/tools',
+    CALL_TOOL: '/api/mcp/tools/call',
+    AGENT_CHAT: '/api/mcp/agent/chat',
+    AGENT_SEND_OUTPUT: '/api/mcp/agent/send-output',
+  },
 } as const;
 
 export const API_CONFIG = {

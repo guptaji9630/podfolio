@@ -4,6 +4,8 @@ import { PROJECTS } from '../config/constants';
 import { apiClient } from './api';
 import { API_ENDPOINTS } from '../config/api.config';
 import { CHAT_CONTEXT_LIMIT, CHAT_INPUT_LIMIT } from '../config/chat';
+import { mcpService } from './mcpService';
+import { MCPTool } from '../types/mcp.types';
 
 // AI Tools available to the assistant
 export const AI_TOOLS: AITool[] = [
@@ -28,6 +30,22 @@ export const AI_TOOLS: AITool[] = [
       senderEmail: {
         type: 'string',
         description: 'Email address of the sender for reply',
+      },
+    },
+  },
+  {
+    name: 'send_agent_output',
+    description: 'Send the AI agent conversation/output to Abhishek via email. Use this when user explicitly asks to email the conversation or send a summary.',
+    parameters: {
+      subject: {
+        type: 'string',
+        description: 'Email subject line',
+        required: true,
+      },
+      content: {
+        type: 'string',
+        description: 'The conversation content or summary to send',
+        required: true,
       },
     },
   },
@@ -146,6 +164,25 @@ async function executeToolCall(name: string, args: Record<string, any>, signal?:
       }, targetOrigin);
       return { success: true, message: `Launching ${gameId}${mode ? ` (${mode} mode)` : ''}...` };
     }
+    case 'send_agent_output': {
+      const { subject, content } = args;
+      const response = await apiClient.post(API_ENDPOINTS.MCP.AGENT_SEND_OUTPUT, { subject, content }, undefined, signal);
+      signal?.throwIfAborted();
+      if (!response.success) throw new Error(response.error?.message || 'Failed to send agent output email');
+      return { success: true, message: 'Agent output sent via email' };
+    }
+    case 'list_available_tools': {
+      const mcpToolResults = await mcpService.listTools();
+      const mcpTools = mcpToolResults.flatMap(r => r.tools);
+      const allTools = [...AI_TOOLS, ...mcpTools];
+      return { 
+        tools: allTools.map(t => ({ 
+          name: t.name, 
+          description: t.description || 'No description',
+          type: AI_TOOLS.some(ai => ai.name === t.name) ? 'local' : 'mcp'
+        }))
+      };
+    }
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
@@ -228,7 +265,7 @@ Keep responses concise like a chat message — no unnecessary lectures, just cle
 export class ChatService {
   constructor() {}
 
-  private detectToolIntent(message: string): { name: string; arguments: Record<string, any> } | null {
+  private detectToolIntent(message: string, availableTools: (AITool | MCPTool)[] = AI_TOOLS): { name: string; arguments: Record<string, any> } | null {
     const lower = message.toLowerCase();
     
     // Check for specific game launch requests FIRST (before general game queries)
@@ -265,6 +302,46 @@ export class ChatService {
       }};
     }
     
+    // Check for "list tools" / "what tools" / "available tools" queries
+    if (/(what tools|list tools|available tools|show tools|tools available)/.test(lower)) {
+      return { name: 'list_available_tools', arguments: {} };
+    }
+
+    // Check for excalidraw/drawing related queries
+    if (/(draw|diagram|sketch|excalidraw|whiteboard|chart|flowchart|mind.?map)/.test(lower)) {
+      // First, check for create_from_mermaid for flowchart/mermaid/diagram requests
+      if (/(flowchart|flow.?chart|diagram|mermaid)/.test(lower)) {
+        for (const tool of availableTools) {
+          if (tool.name === 'create_from_mermaid') {
+            return { name: tool.name, arguments: { 
+              mermaidDiagram: 'flowchart TD\n    A[Start] --> B[Process]\n    B --> C[Decision]\n    C -->|Yes| D[End]\n    C -->|No| B' 
+            }};
+          }
+        }
+      }
+      
+      // For general draw requests, find first matching excalidraw tool
+      for (const tool of availableTools) {
+        const toolName = tool.name.toLowerCase();
+        const toolDesc = tool.description?.toLowerCase() || '';
+        if (toolName.includes('excalidraw') || toolName.includes('draw') || toolName.includes('diagram') || toolDesc.includes('excalidraw') || toolDesc.includes('draw') || toolDesc.includes('diagram')) {
+          // Skip create_from_mermaid for general draw (already handled above)
+          if (toolName === 'create_from_mermaid') continue;
+          return { name: tool.name, arguments: {} };
+        }
+      }
+    }
+    
+    // Check for MCP tools by name matching (name or description)
+    for (const tool of availableTools) {
+      const keywords = tool.name.toLowerCase().split('_');
+      const descKeywords = (tool.description || '').toLowerCase().split(/[\s_]+/);
+      const allKeywords = [...keywords, ...descKeywords];
+      if (allKeywords.some(k => k.length > 2 && lower.includes(k))) {
+        return { name: tool.name, arguments: {} };
+      }
+    }
+    
     return null;
   }
 
@@ -277,72 +354,135 @@ export class ChatService {
     messages = messages.slice(-CHAT_CONTEXT_LIMIT);
     const latestUserMessage = messages.filter(m => m.role === 'user').at(-1)?.content || '';
 
+    // Try local execution first (local tools + NIM proxy)
+    const localResult = await this.tryLocalExecution(messages, enableTools, signal);
+    if (localResult) {
+      return localResult;
+    }
+
+    // Fallback to backend agent service if local execution fails or returns empty
+    console.log('[ChatService] Local execution failed/empty, falling back to backend agent');
+    return this.tryBackendAgent(messages, enableTools, signal);
+  }
+
+  private async tryLocalExecution(
+    messages: ChatMessage[],
+    enableTools: boolean,
+    signal?: AbortSignal
+  ): Promise<ChatApiResponse | null> {
+    const latestUserMessage = messages.filter(m => m.role === 'user').at(-1)?.content || '';
     try {
+      // Fetch MCP tools if enabled
+      let mcpTools: MCPTool[] = [];
+      if (enableTools) {
+        try {
+          const mcpToolResults = await mcpService.listTools();
+          mcpTools = mcpToolResults.flatMap(r => r.tools);
+        } catch {
+          // MCP tools unavailable, continue with local tools only
+        }
+      }
+
+      // Check if any MCP tools would be needed
+      const toolIntent = this.detectToolIntent(latestUserMessage, [...AI_TOOLS, ...mcpTools]);
+      if (toolIntent) {
+        const isMcpTool = mcpTools.some(t => t.name === toolIntent.name);
+        if (isMcpTool) {
+          // MCP tool detected - route to backend agent instead of local execution
+          return null; // Trigger fallback to backend agent
+        }
+      }
+
       const allToolCalls: Array<{ name: string; arguments: Record<string, any> }> = [];
       let currentMessages = [...messages];
 
-      // Local tool detection and execution (since NIM API doesn't support function calling reliably)
-      if (enableTools) {
-        const toolIntent = this.detectToolIntent(latestUserMessage);
-        if (toolIntent) {
-          try {
-            const result = await executeToolCall(toolIntent.name, toolIntent.arguments, signal);
-            allToolCalls.push(toolIntent);
-            
-            // Add tool result as context for the model
-            const toolResultMessage = `Tool "${toolIntent.name}" returned: ${JSON.stringify(result)}`;
-            currentMessages.push({
-              role: 'tool',
-              content: toolResultMessage,
-              toolCalls: [{ name: toolIntent.name, arguments: toolIntent.arguments, result }],
-            });
-          } catch (toolError: any) {
-            signal?.throwIfAborted();
-            allToolCalls.push(toolIntent);
-            currentMessages.push({
-              role: 'tool',
-              content: `Tool "${toolIntent.name}" failed: ${toolError.message}`,
-              toolCalls: [{ name: toolIntent.name, arguments: toolIntent.arguments, result: { error: toolError.message } }],
-            });
-          }
+      // Local tool detection and execution (only for local tools)
+      if (enableTools && toolIntent && !mcpTools.some(t => t.name === toolIntent.name)) {
+        try {
+          const result = await executeToolCall(toolIntent.name, toolIntent.arguments, signal);
+          allToolCalls.push(toolIntent);
+          
+          // Add tool result as context for the model
+          const toolResultMessage = `Tool "${toolIntent.name}" returned: ${JSON.stringify(result)}`;
+          currentMessages.push({
+            role: 'tool',
+            content: toolResultMessage,
+            toolCalls: [{ name: toolIntent.name, arguments: toolIntent.arguments, result }],
+          });
+        } catch (toolError: any) {
+          signal?.throwIfAborted();
+          allToolCalls.push(toolIntent);
+          currentMessages.push({
+            role: 'tool',
+            content: `Tool "${toolIntent.name}" failed: ${toolError.message}`,
+            toolCalls: [{ name: toolIntent.name, arguments: toolIntent.arguments, result: { error: toolError.message } }],
+          });
         }
       }
 
       // Get final response from model with tool context
       const response = await this.requestCompletion(currentMessages, false, signal);
       
+      // If we got a meaningful response with content, return it
+      const responseText = response.responseText?.trim();
+      if (responseText && responseText.length > 0) {
+        return {
+          message: responseText,
+          toolCalls: allToolCalls.length > 0 ? allToolCalls : undefined,
+        };
+      }
+
+      // Empty response, return null to trigger fallback
+      return null;
+    } catch (error: unknown) {
+      console.error('[ChatService] Local execution error:', error);
+      return null; // Trigger fallback
+    }
+  }
+
+  private async tryBackendAgent(
+    messages: ChatMessage[],
+    enableTools: boolean,
+    signal?: AbortSignal
+  ): Promise<ChatApiResponse> {
+    try {
+      // Use backend agent which has full MCP tool access
+      const result = await mcpService.sendAgentMessage(
+        messages.map(m => ({ role: m.role, content: m.content })),
+        { sendEmail: false } // Don't auto-send email, let user request it
+      );
+      
       return {
-        message: response.responseText || "I'm sorry, I couldn't process that request.",
-        toolCalls: allToolCalls.length > 0 ? allToolCalls : undefined,
+        message: result.message || "I'm sorry, I couldn't process that request.",
+        toolCalls: result.toolCalls?.map(tc => ({ name: tc.name, arguments: tc.arguments })),
       };
     } catch (error: unknown) {
-      signal?.throwIfAborted();
-      console.error('Chat service error:', error);
-
-      const errorMsg = String((error as { message?: string })?.message || '');
-
-      if (errorMsg.includes('invalid') || errorMsg.includes('unauthorized') || errorMsg.includes('401')) {
-        return {
-          message: "The AI service is temporarily unavailable. Please contact the administrator to renew the API key.",
-        };
-      }
-
-      if (errorMsg.includes('not found') || errorMsg.includes('404')) {
-        return {
-          message: "I'm experiencing technical difficulties. Please try again in a moment.",
-        };
-      }
-
-      if (errorMsg.includes('Network Error') || errorMsg.includes('CORS') || errorMsg.includes('ERR_NETWORK')) {
-        return {
-          message: this.generateFrontendReply(latestUserMessage),
-        };
-      }
-
+      console.error('[ChatService] Backend agent error:', error);
+      
+      // Final fallback to frontend reply
+      const latestUserMessage = messages.filter(m => m.role === 'user').at(-1)?.content || '';
       return {
         message: this.generateFrontendReply(latestUserMessage),
       };
     }
+  }
+
+  async sendMessage(
+    messages: ChatMessage[],
+    enableTools: boolean = ENV.ENABLE_AI_TOOLS,
+    signal?: AbortSignal
+  ): Promise<ChatApiResponse> {
+    signal?.throwIfAborted();
+    messages = messages.slice(-CHAT_CONTEXT_LIMIT);
+    
+    // Try local execution first, then fallback to backend agent
+    const localResult = await this.tryLocalExecution(messages, enableTools, signal);
+    if (localResult) {
+      return localResult;
+    }
+    
+    console.log('[ChatService] Local execution failed/empty, falling back to backend agent');
+    return this.tryBackendAgent(messages, enableTools, signal);
   }
 
   private generateFrontendReply(userInput: string): string {

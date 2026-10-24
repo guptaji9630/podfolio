@@ -38,7 +38,7 @@ class ApiClient {
       if (callerSignal?.aborted) return this.cancelled<T>();
       const retryable = failure.name === 'AbortError' ||
         failure.message?.includes('fetch') ||
-        (failure.status >= 500 && failure.status < 600);
+        (failure.status !== undefined && failure.status >= 500 && failure.status < 600);
       // Retrying writes can duplicate emails or other side effects.
       if (options.method !== 'GET' || attempt >= API_CONFIG.RETRY_ATTEMPTS || !retryable) {
         return { success: false, error: { message: failure.message || 'Network error occurred', code: failure.code, status: failure.status } };

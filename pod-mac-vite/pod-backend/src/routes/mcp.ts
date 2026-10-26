@@ -1,19 +1,47 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { mcpToolRegistry } from '../services/mcpToolRegistry.js';
 import { emailService } from '../services/emailService.js';
 import { MCPConnectionConfig, MCPToolCall } from '../types/mcp.types.js';
 
 const router = Router();
 
+// Admin authorization middleware for MCP admin endpoints
+const requireAdminAuth = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  const adminToken = process.env.MCP_ADMIN_TOKEN;
+  
+  if (!adminToken) {
+    return res.status(500).json({ success: false, error: 'Admin token not configured' });
+  }
+  
+  if (!authHeader || authHeader !== `Bearer ${adminToken}`) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
+  
+  next();
+};
+
+// Helper to create safe connection DTO (no secrets)
+const toConnectionDTO = (config: MCPConnectionConfig, info: any) => ({
+  id: config.id,
+  name: config.name,
+  transport: config.transport,
+  url: config.url,
+  command: config.command,
+  args: config.args,
+  enabled: config.enabled,
+  status: info?.status || 'disconnected',
+  toolsCount: info?.tools?.length || 0,
+});
+
+// All admin endpoints require authorization
+router.use(requireAdminAuth);
+
 router.get('/connections', (_req: Request, res: Response) => {
   const configs = mcpToolRegistry.getAllConfigs();
   const servers = configs.map(config => {
     const info = mcpToolRegistry.getServerInfo(config.id);
-    return {
-      ...config,
-      status: info?.status || 'disconnected',
-      toolsCount: info?.tools.length || 0,
-    };
+    return toConnectionDTO(config, info);
   });
   res.json({ success: true, data: servers });
 });
@@ -21,6 +49,10 @@ router.get('/connections', (_req: Request, res: Response) => {
 router.post('/connections', async (req: Request, res: Response) => {
   try {
     const config: MCPConnectionConfig = req.body;
+    // Validate required fields
+    if (!config.id || !config.name || !config.transport) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
     mcpToolRegistry.registerConnection(config);
     res.json({ success: true, message: 'Connection registered' });
   } catch (error) {
@@ -82,9 +114,9 @@ router.post('/tools/call', async (req: Request, res: Response) => {
 
 router.post('/agent/chat', async (req: Request, res: Response) => {
   try {
-    const { messages, sendEmail, emailTo, conversationId } = req.body;
-    const { agentService } = await import('../services/agentService');
-    const response = await agentService.processMessage(messages, { sendEmail, emailTo, conversationId });
+    const { messages, conversationId } = req.body;
+    const { agentService } = await import('../services/agentService.js');
+    const response = await agentService.processMessage(messages, { conversationId });
     res.json({ success: true, data: response });
   } catch (error) {
     res.status(500).json({ success: false, error: (error as Error).message });
@@ -94,7 +126,7 @@ router.post('/agent/chat', async (req: Request, res: Response) => {
 router.post('/agent/detect-tool', async (req: Request, res: Response) => {
   try {
     const { message } = req.body;
-    const { agentService: agentServiceInstance } = await import('../services/agentService');
+    const { agentService: agentServiceInstance } = await import('../services/agentService.js');
     const tools = agentServiceInstance.getAvailableTools();
     
     // Use the same detection logic as agentService
@@ -109,7 +141,7 @@ router.post('/agent/detect-tool', async (req: Request, res: Response) => {
         allTools: tools.map(t => ({ name: t.name, description: t.description }))
       });
     }
-
+    
     // Check for excalidraw/drawing related queries - prefer create_from_mermaid for flowcharts/diagrams
     if (/(draw|diagram|sketch|excalidraw|whiteboard|chart|flowchart|mind.?map|flow.?chart)/.test(lower)) {
       // Find excalidraw-related MCP tools - prefer create_from_mermaid for flowcharts

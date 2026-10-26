@@ -35,10 +35,13 @@ export class MCPService {
     return response.data;
   }
 
-  async sendAgentMessage(messages: Array<{ role: string; content: string }>, options?: { sendEmail?: boolean; emailTo?: string; conversationId?: string }): Promise<{ message: string; toolCalls?: Array<{ name: string; arguments: Record<string, unknown>; result: unknown }> }> {
-    const response = await apiClient.post<{ message: string; toolCalls?: Array<{ name: string; arguments: Record<string, unknown>; result: unknown }> }>(API_ENDPOINTS.MCP.AGENT_CHAT, { messages, ...options });
+  async sendAgentMessage(messages: Array<{ role: string; content: string }>, options?: { conversationId?: string }): Promise<{ message: string; toolCalls?: Array<{ name: string; arguments: Record<string, unknown>; result: unknown }>; canvasUrl?: string }> {
+    const response = await apiClient.post<{ success: boolean; data: { message: string; toolCalls?: Array<{ name: string; arguments: Record<string, unknown>; result: unknown }>; canvasUrl?: string } }>(API_ENDPOINTS.MCP.AGENT_CHAT, { messages, ...options });
     if (!response.success || !response.data) throw new Error(response.error?.message || 'Agent chat failed');
-    return response.data;
+    // Backend returns {success: true, data: {message, toolCalls, canvasUrl}}
+    // apiClient wraps it in another layer: {success: true, data: {success: true, data: {...}}}
+    const backendResponse = response.data.data;
+    return backendResponse || { message: 'Agent chat failed' };
   }
 }
 

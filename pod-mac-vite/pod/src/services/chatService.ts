@@ -452,7 +452,7 @@ export class ChatService {
         { sendEmail: false } // Don't auto-send email, let user request it
       );
       
-      return {
+return {
         message: result.message || "I'm sorry, I couldn't process that request.",
         toolCalls: result.toolCalls?.map(tc => ({ name: tc.name, arguments: tc.arguments })),
       };
@@ -465,24 +465,6 @@ export class ChatService {
         message: this.generateFrontendReply(latestUserMessage),
       };
     }
-  }
-
-  async sendMessage(
-    messages: ChatMessage[],
-    enableTools: boolean = ENV.ENABLE_AI_TOOLS,
-    signal?: AbortSignal
-  ): Promise<ChatApiResponse> {
-    signal?.throwIfAborted();
-    messages = messages.slice(-CHAT_CONTEXT_LIMIT);
-    
-    // Try local execution first, then fallback to backend agent
-    const localResult = await this.tryLocalExecution(messages, enableTools, signal);
-    if (localResult) {
-      return localResult;
-    }
-    
-    console.log('[ChatService] Local execution failed/empty, falling back to backend agent');
-    return this.tryBackendAgent(messages, enableTools, signal);
   }
 
   private generateFrontendReply(userInput: string): string {

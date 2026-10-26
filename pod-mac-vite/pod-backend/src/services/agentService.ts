@@ -1,5 +1,5 @@
 import { mcpToolRegistry } from './mcpToolRegistry.js';
-import { emailService, type AgentOutputEmailData } from './emailService.js';
+import { emailService } from './emailService.js';
 
 export interface AgentTool {
   name: string;
@@ -102,6 +102,22 @@ export class AgentService {
         }))
       };
     });
+
+    this.localTools.set('send_agent_output', async (args) => {
+      const { subject, content, to, conversationId } = args as { 
+        subject: string; 
+        content: string; 
+        to?: string; 
+        conversationId?: string 
+      };
+      const result = await emailService.sendAgentOutput({
+        to: to || process.env.RECIPIENT_EMAIL || 'abhishekg9630@gmail.com',
+        subject: subject || 'AI Agent Output',
+        agentOutput: content,
+        conversationId: conversationId,
+      });
+      return result;
+    });
   }
 
   getAvailableTools(): AgentTool[] {
@@ -110,6 +126,7 @@ export class AgentService {
     for (const [name] of this.localTools) {
       const descriptions: Record<string, string> = {
         send_contact_email: 'Send a contact/inquiry email to Abhishek on behalf of the user',
+        send_agent_output: 'Send the AI agent conversation/output via email to Abhishek',
         get_project_details: 'Get detailed information about a specific project by name or category',
         get_availability: "Check Abhishek's current availability for projects or consultations",
         get_game_list: 'Get list of available games with high scores and descriptions',
@@ -172,7 +189,7 @@ export class AgentService {
 
   async processMessage(
     messages: AgentMessage[],
-    options?: { sendEmail?: boolean; emailTo?: string; conversationId?: string }
+    _options?: { conversationId?: string }
   ): Promise<AgentResponse> {
     const tools = this.getAvailableTools();
     
@@ -195,17 +212,6 @@ export class AgentService {
 
     const aiResponse = await this.getAIResponse(messages, toolCalls);
 
-    if (options?.sendEmail && options.emailTo) {
-      const emailData: AgentOutputEmailData = {
-        to: options.emailTo,
-        subject: 'AI Agent Response',
-        agentOutput: aiResponse,
-        toolCalls,
-        conversationId: options.conversationId,
-      };
-      await emailService.sendAgentOutput(emailData);
-    }
-
     return { 
       message: aiResponse, 
       toolCalls,
@@ -218,6 +224,44 @@ export class AgentService {
 
   private detectToolIntent(message: string, tools: AgentTool[]): { name: string; arguments: Record<string, unknown> } | null {
     const lower = message.toLowerCase();
+    
+    // Check for "list tools" / "what tools" / "available tools" queries
+    if (/(what tools|list tools|available tools|show tools|tools available)/.test(lower)) {
+      return { name: 'list_available_tools', arguments: {} };
+    }
+
+    // Check for email/send email requests
+    if (/(email|send email|mail|send mail)/.test(lower)) {
+      // Check if there's a send_agent_output tool available
+      for (const tool of tools) {
+        if (tool.name === 'send_agent_output') {
+          // Extract potential subject from the message
+          const subjectMatch = message.match(/subject[:]\s*([^,\n]+)/i);
+          const subject = subjectMatch ? subjectMatch[1].trim() : 'AI Agent Output';
+          return { 
+            name: 'send_agent_output', 
+            arguments: { 
+              subject: subject,
+              content: message 
+            } 
+          };
+        }
+      }
+      // Fallback to send_contact_email if send_agent_output not available
+      for (const tool of tools) {
+        if (tool.name === 'send_contact_email') {
+          return { 
+            name: 'send_contact_email', 
+            arguments: { 
+              subject: 'Message from portfolio chat',
+              message: message,
+              senderName: 'Portfolio Visitor',
+              senderEmail: ''
+            }
+          };
+        }
+      }
+    }
     
     // Check for "list tools" / "what tools" / "available tools" queries
     if (/(what tools|list tools|available tools|show tools|tools available)/.test(lower)) {

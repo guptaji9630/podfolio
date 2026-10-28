@@ -1,12 +1,18 @@
 import axios from 'axios';
 import { ENV } from '../config/env.js';
+import { ServiceError } from '../utils/serviceError.js';
 export interface AgentMessage { role: 'system' | 'user' | 'assistant' | 'tool'; content: string }
 export async function complete(messages: AgentMessage[], signal?: AbortSignal): Promise<string> {
   const response = await axios.post(`${ENV.NVIDIA_NIM_API_URL}/chat/completions`, {
     model: ENV.NVIDIA_NIM_MODEL, messages, max_tokens: 512, temperature: 0.7, stream: false,
-  }, { headers: { Authorization: `Bearer ${ENV.NVIDIA_NIM_API_KEY}` }, signal, timeout: 20000, maxContentLength: 1024 * 1024 });
+  }, { headers: { Authorization: `Bearer ${ENV.NVIDIA_NIM_API_KEY}` }, signal, timeout: 20000, maxContentLength: 1024 * 1024 }).catch(error => {
+    signal?.throwIfAborted();
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+    if (status === 429 || status === 503) throw new ServiceError('LLM_BUSY', 'The AI provider is busy. Please try your request again shortly.', 503);
+    throw new ServiceError('LLM_UNAVAILABLE', 'The AI provider is unavailable. Please try again shortly.');
+  });
   const content = response.data?.choices?.[0]?.message?.content;
-  if (typeof content !== 'string' || !content.trim()) throw new Error('AI provider returned an empty response.');
+  if (typeof content !== 'string' || !content.trim()) throw new ServiceError('LLM_EMPTY_RESPONSE', 'The AI provider returned no answer. Please try again.');
   return content.trim();
 }
 export async function embedQuestion(text: string, signal?: AbortSignal): Promise<number[]> {

@@ -9,8 +9,14 @@ process.env.RESEND_API_KEY = 're_test_placeholder';
 process.env.NVIDIA_NIM_API_KEY = 'test-placeholder';
 process.env.MCP_CONNECTIONS = '[]';
 const provider = createServer((req, res) => {
-  req.resume(); res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(req.url === '/embeddings' ? { data: [{ embedding: [1, 0] }] } : { choices: [{ message: { content: 'Abhishek has QA and testing skills.' } }] }));
+  let body = '';
+  req.on('data', chunk => { body += chunk; });
+  req.on('end', () => {
+    res.setHeader('Content-Type', 'application/json');
+    const diagram = JSON.parse(body || '{}').messages?.[0]?.content.includes('Return only a basic Mermaid flowchart');
+    const content = diagram ? '```mermaid\nflowchart TD; A[Requirements] --> B[Test execution]; B --> C[Bug reporting]\n```' : 'Abhishek has QA and testing skills.';
+    res.end(JSON.stringify(req.url === '/embeddings' ? { data: [{ embedding: [1, 0] }] } : { choices: [{ message: { content } }] }));
+  });
 });
 provider.listen(0, '127.0.0.1'); await once(provider, 'listening');
 process.env.NVIDIA_NIM_API_URL = `http://127.0.0.1:${provider.address().port}`;
@@ -67,6 +73,15 @@ try {
     return scene.elements.some(e => e.text === 'Browser edit' && !e.isDeleted) && scene.elements.some(e => e.text === 'Start' && !e.isDeleted);
   }, { base, id }, { timeout: 15000 });
   await frame.getByText('Saved', { exact: true }).waitFor();
+  // Custom text must use the same canvas flow as the example buttons.
+  await page.getByRole('textbox', { name: 'Message' }).fill('create a flow diagram of manual testing');
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await page.waitForFunction(async ({ base, id }) => {
+    const scene = await (await fetch(`${base}/api/mcp/canvas/${id}`)).json();
+    return scene.elements.some(e => e.text === 'Test execution');
+  }, { base, id });
+  assert.equal(await page.getByRole('link', { name: 'Open canvas ↗', exact: true }).getAttribute('href'), iframeSrc);
+  await frame.getByText('Saved', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Export canvas', exact: true }).click();
   await page.getByRole('link', { name: 'Download SVG', exact: true }).waitFor();
   const downloadPromise = page.waitForEvent('download');
@@ -89,6 +104,21 @@ try {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(base);
   await page.getByRole('button', { name: 'smart_toy AI Assistant' }).click();
+  await page.locator('input').fill('create a flow diagram of manual testing');
+  await page.locator('input').press('Enter');
+  const dockLink = page.getByRole('link', { name: /Open in Excalidraw Canvas/ });
+  await dockLink.waitFor();
+  const dockCanvasUrl = await dockLink.getAttribute('href');
+  const dockId = new URL(dockCanvasUrl).searchParams.get('canvasId');
+  assert.notEqual(dockId, id, 'dock and playground maintain separate conversations');
+  const dockScene = await (await fetch(`${base}/api/mcp/canvas/${dockId}`)).json();
+  assert.ok(dockScene.elements.some(e => e.text === 'Test execution'));
+  const popupPromise = page.waitForEvent('popup');
+  await dockLink.click();
+  const popup = await popupPromise;
+  await popup.getByText('Saved', { exact: true }).waitFor();
+  await popup.locator('canvas').first().waitFor();
+  await popup.close();
   await page.locator('input').fill('play dino'); await page.locator('input').press('Enter');
   await page.locator('canvas').first().waitFor();
   await page.locator('main .glass-panel').last().getByRole('button', { name: 'close', exact: true }).click();
@@ -110,7 +140,7 @@ try {
   assert.equal(await page.getByText('OBSOLETE REPLY').count(), 0);
   assert.equal(await page.evaluate(() => localStorage.getItem('portfolio_chat_history')), null);
   assert.deepEqual(errors, []);
-  console.log('PASS: lazy desktop, tool discovery, actual canvas render/edit/save, remote diagram, SVG download/XML, mobile overflow, session isolation, desktop game launch and pending-chat cancellation.');
+  console.log('PASS: lazy desktop, tool discovery, actual canvas render/edit/save, custom diagrams in playground and dock, remote diagram, SVG download/XML, mobile overflow, session isolation, desktop game launch and pending-chat cancellation.');
 } catch (error) {
   console.log('BROWSER_PAGES', await Promise.all(browser.contexts().flatMap(c => c.pages()).map(async p => ({ url: p.url(), text: (await p.locator('body').innerText()).slice(-4000) }))));
   throw error;

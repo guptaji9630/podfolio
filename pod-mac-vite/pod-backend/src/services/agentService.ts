@@ -7,6 +7,8 @@ import { complete, embedQuestion, type AgentMessage } from './nimClient.js';
 import { deduplicateRequest, generateRequestKey } from '../utils/requestDeduplication.js';
 import { mcpToolRegistry } from './mcpToolRegistry.js';
 import { emailService } from './emailService.js';
+import { ServiceError } from '../utils/serviceError.js';
+import { isDiagramRequest, extractMermaid } from './diagramIntent.js';
 export type { AgentMessage } from './nimClient.js';
 export interface AgentResponse {
   message: string; cached: boolean; source: 'llm' | 'cache' | 'local' | 'mcp';
@@ -57,15 +59,15 @@ export class AgentService {
       const drawingRequested = !/\b(don't|do not|never|without|how to|how do|how can)\b/.test(lower);
       let tool: { name: string; arguments: Record<string, unknown> } | undefined;
       if (drawingRequested && /\b(export|download)\b.*\b(canvas|drawing|diagram|image)\b/.test(lower)) tool = { name: 'export_to_image', arguments: { format: 'svg' } };
-      else if (drawingRequested && (/\b(draw|create|make|generate)\b.*\b(flowchart|diagram|mermaid)\b/.test(lower) || /^(?:graph|flowchart)\s+(?:TD|LR|TB|RL|BT)\b/.test(question))) {
-        let mermaid = question.match(/```(?:mermaid)?\s*([\s\S]*?)```/i)?.[1] ?? question.match(/(?:graph|flowchart)\s+(?:TD|LR|TB|RL|BT)\b[\s\S]*/)?.[0];
+      else if (isDiagramRequest(question)) {
+        let mermaid = extractMermaid(question);
         if (!mermaid && !/^(?:please\s+)?(?:draw|create|make|generate)\s+(?:a\s+)?(?:simple\s+)?(?:mermaid\s+)?flowchart[.!]?$/i.test(question)) {
           const generated = await this.dependencies.complete([
             { role: 'system', content: 'Return only a basic Mermaid flowchart beginning with flowchart TD or flowchart LR. Use at most 8 nodes with simple ASCII IDs and labels in [rectangle], (ellipse), or {diamond}. Use only --> arrows, with no edge labels, subgraphs, styling, or comments. Represent the user request faithfully. No prose.' },
-            { role: 'user', content: question },
+            ...messages.filter(m => m.role === 'user' || m.role === 'assistant').slice(-8),
           ], signal);
-          mermaid = generated.match(/```(?:mermaid)?\s*([\s\S]*?)```/i)?.[1] ?? generated.trim();
-          if (mermaid.length > 10000 || !/^(?:graph|flowchart)\s+(?:TD|LR|TB|RL|BT)\b/.test(mermaid)) throw new Error('The model did not return a supported flowchart. Paste a Mermaid flowchart instead.');
+          mermaid = extractMermaid(generated);
+          if (!mermaid || mermaid.length > 10000) throw new ServiceError('DIAGRAM_GENERATION_FAILED', 'The model could not generate a supported flowchart. Try describing the steps and connections, or paste a basic Mermaid flowchart.');
         }
         tool = { name: 'create_from_mermaid', arguments: { mermaidDiagram: mermaid ?? 'flowchart TD; A[Start] --> B[Process]; B --> C[End]' } };
       } else if (drawingRequested && /\b(draw|create|add|make)\b.*\b(rectangle|square|circle|ellipse|diamond)\b/.test(lower)) {

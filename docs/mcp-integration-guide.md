@@ -21,7 +21,7 @@ Backend `.env` needs `NVIDIA_NIM_API_KEY` and `RESEND_API_KEY`. Set `NVIDIA_NIM_
 
 The built-in Excalidraw connection uses `EXCALIDRAW_MCP_URL=http://localhost:3001/mcp`. Remove or update any older `MCP_CONNECTIONS` entry with id `excalidraw`: an explicit connection configuration overrides the built-in one. In particular, the old `npx mcp-excalidraw-server` stdio scaffold is not the new HTTP service. The supported standalone entrypoint is `src/service.ts` / `dist/service.js`; older scaffold files are preserved locally.
 
-Open http://localhost:5173/mcp or the assistant's playground link. Try “List available tools”, “Draw a rectangle”, “Draw a flowchart”, and “Export canvas”. For a custom diagram, describe it in a drawing request (the LLM generates a supported flowchart), or paste:
+Open http://localhost:5173/mcp or the assistant's playground link. Try “List available tools”, “Draw a rectangle”, “Draw a flowchart”, and “Export canvas”. Custom requests work in both the dock assistant and playground: for example, “create a flow diagram of manual testing”, “give me a flowchart for checkout”, or “visualize the deployment process”. The LLM generates a supported flowchart, the backend executes the drawing tool, and the response includes an editable canvas link. Recent conversation context is included for requests such as “turn this into a flow diagram”. Informational questions, explicit code-only requests, and disabled tools remain text responses. If the model provider is overloaded, the assistant reports that it is busy instead of claiming a drawing exists. You can also paste:
 
 ```mermaid
 flowchart TD

@@ -10,11 +10,14 @@ process.env.RESEND_API_KEY = 're_test_placeholder';
 process.env.NVIDIA_NIM_API_KEY = 'test-placeholder';
 process.env.MCP_ADMIN_TOKEN = 'local-test-admin';
 let completions = 0;
+let completionText = 'QA skills answer';
+let completionStatus = 200;
 const provider = createServer((req, res) => {
   req.resume(); res.setHeader('Content-Type', 'application/json');
   if (req.url === '/embeddings') return res.end(JSON.stringify({ data: [{ embedding: [1, 0] }] }));
   completions++;
-  setTimeout(() => res.end(JSON.stringify({ choices: [{ message: { content: 'QA skills answer' } }] })), 25);
+  res.statusCode = completionStatus;
+  setTimeout(() => res.end(JSON.stringify({ choices: [{ message: { content: completionText } }] })), 25);
 });
 provider.listen(0, '127.0.0.1'); await once(provider, 'listening');
 process.env.NVIDIA_NIM_API_URL = `http://127.0.0.1:${provider.address().port}`;
@@ -103,6 +106,69 @@ test('natural-language diagrams generate Mermaid before tools; failures and nega
   const failed = new AgentService({ complete: async () => { throw new Error('offline'); }, embed: async () => [1, 0], registry: {}, email: {} });
   await assert.rejects(failed.processMessage([{ role: 'user', content: 'skills?' }]), /offline/);
   assert.equal(failed.cache.getStats().size, 0);
+});
+test('custom diagram wording generates a canvas without caching tool actions', async () => {
+  const calls = []; const prompts = [];
+  const service = new AgentService({ complete: async messages => { prompts.push(messages); return 'Here is the diagram:\n```mermaid\nflowchart TD; A[Requirements] --> B[Test execution]\n```'; }, embed: async () => [1, 0], registry: { call: async (...args) => { calls.push(args); return { content: [] }; } }, email: {} });
+  for (const question of [
+    'create a flow diagram of manual testing', 'Give me a flowchart for checkout',
+    'I need a diagram of the deployment process', 'Flow chart for signing up',
+    'Could you show the testing process as a flow diagram?', 'Visualize manual testing',
+    'Map out the manual testing process', 'Turn this into a flow diagram',
+    'Create a flow diagram showing how to test checkout', 'Draw a flowchart, but do not use colors',
+  ]) {
+    const conversationId = randomUUID();
+    const response = await service.processMessage([{ role: 'user', content: question }], { conversationId });
+    assert.equal(response.source, 'mcp', question);
+    assert.equal(response.cached, false);
+    assert.equal(new URL(response.canvasUrl).searchParams.get('canvasId'), conversationId);
+    assert.equal(response.toolCalls[0].name, 'create_from_mermaid');
+  }
+  assert.equal(calls.length, 10); assert.equal(prompts.length, 10);
+  assert.equal(service.cache.getStats().size, 0);
+  const before = calls.length;
+  for (const question of ['What is a flowchart?', 'Tell me how to create a flow diagram', 'Can you explain how to draw a diagram?', 'Show me how to create a diagram', 'Do not create a diagram', 'Don’t draw a flowchart', 'Do not visualize manual testing', 'Never map out this process', 'Give me only Mermaid code for a diagram']) {
+    const response = await service.processMessage([{ role: 'user', content: question }], { useCache: false });
+    assert.equal(response.canvasUrl, undefined, question);
+  }
+  await service.processMessage([{ role: 'user', content: 'create a flow diagram of manual testing' }], { useTools: false, useCache: false });
+  assert.equal(calls.length, before, 'informational, negative, code-only and tools-disabled requests do not draw');
+  const history = [{ role: 'user', content: 'The process is requirements, test execution, then bug reporting.' }, { role: 'assistant', content: 'Understood.' }, { role: 'user', content: 'Turn this into a flow diagram' }];
+  await service.processMessage(history);
+  assert.deepEqual(prompts.at(-1).slice(1), history, 'diagram generation retains the topic from conversation history');
+});
+test('custom manual-testing prompt runs the LLM and real MCP service and returns a usable canvas URL', async () => {
+  const id = randomUUID();
+  completionText = '```mermaid\nflowchart TD; A[Requirements] --> B[Test execution]; B --> C[Bug reporting]\n```';
+  try {
+    const response = await post('/api/chat', payload('create a flow diagram of manual testing', { conversationId: id }));
+    assert.equal(response.status, 200);
+    const { data } = await response.json();
+    assert.equal(data.source, 'mcp');
+    assert.equal(new URL(data.canvasUrl).searchParams.get('canvasId'), id);
+    const scene = await (await fetch(`${base}/api/mcp/canvas/${id}`)).json();
+    assert.ok(scene.elements.some(element => element.text === 'Test execution'));
+    assert.ok(scene.elements.some(element => element.type === 'arrow'));
+    completionText = 'I cannot produce a diagram.';
+    const failed = await post('/api/chat', payload('create a flow diagram of manual testing'));
+    assert.equal(failed.status, 502);
+    assert.equal((await failed.json()).error.code, 'DIAGRAM_GENERATION_FAILED');
+  } finally { completionText = 'QA skills answer'; }
+});
+test('provider overload is reported explicitly without retrying or claiming a canvas exists', async () => {
+  const before = completions;
+  completionStatus = 503;
+  completionText = 'private upstream detail';
+  try {
+    const response = await post('/api/chat', payload('create a flow diagram of manual testing'));
+    assert.equal(response.status, 503);
+    const body = await response.json();
+    assert.equal(body.error.code, 'LLM_BUSY');
+    assert.match(body.error.message, /AI provider is busy/);
+    assert.equal(body.data, undefined);
+    assert.doesNotMatch(JSON.stringify(body), /private upstream/);
+    assert.equal(completions, before + 1);
+  } finally { completionStatus = 200; completionText = 'QA skills answer'; }
 });
 test('a broken configured MCP connection returns a specific safe error; correcting it restores flowcharts', async () => {
   const { mcpToolRegistry } = await import('../dist/services/mcpToolRegistry.js');

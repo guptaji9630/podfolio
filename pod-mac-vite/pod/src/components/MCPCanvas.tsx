@@ -4,6 +4,7 @@ import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types';
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
 import '@excalidraw/excalidraw/index.css';
 import { API_CONFIG } from '../config/api.config';
+import { retryAfterMs } from '../utils/retryAfter';
 
 interface Scene { elements: ExcalidrawElement[]; revision: number }
 const base = API_CONFIG.BASE_URL.replace(/\/$/, '');
@@ -16,61 +17,99 @@ export default function MCPCanvas() {
   const revision = useRef(-1);
   const signature = useRef('');
   const pending = useRef<readonly ExcalidrawElement[] | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const saveRef = useRef<() => void>(() => {});
   useEffect(() => {
     if (!valid || !editor) return;
     const controller = new AbortController();
-    let stopped = false; let saving = false; let loading = false;
+    let stopped = false;
+    let busy = false;
+    let retryAt = 0;
+    let failures = 0;
+    let readAt = 0;
+    let saveAt = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const pollMs = 30_000;
     const normalize = (scene: Scene) => scene.elements.flatMap(e => typeof e.version === 'number' ? restoreElements([e], null) : convertToExcalidrawElements([e as NonNullable<Parameters<typeof convertToExcalidrawElements>[0]>[number]], { regenerateIds: false }));
     const apply = (scene: Scene) => {
       const elements = normalize(scene);
       revision.current = scene.revision; signature.current = JSON.stringify(elements);
       editor.updateScene({ elements });
       if (elements.length) editor.scrollToContent(elements, { fitToContent: true });
-      setStatus('Saved');
     };
-    const load = async () => {
-      if (stopped || loading || saving || pending.current) return;
-      loading = true;
-      try {
-        const response = await fetch(`${api}/${id}`, { signal: controller.signal });
-        if (!response.ok) throw new Error();
-        const scene = await response.json() as Scene;
-        if (!stopped && !pending.current && !saving && scene.revision !== revision.current) apply(scene);
-      } catch { if (!stopped) setStatus('Canvas unavailable. Retrying…'); }
-      finally { loading = false; }
+    const request = async (options?: RequestInit) => {
+      const response = await fetch(`${api}/${id}`, { ...options, signal: controller.signal });
+      if (response.status === 429 || response.status === 503) {
+        // A missing/unreadable header must not turn a 429 into another request loop.
+        retryAt = Date.now() + retryAfterMs(response.headers.get('Retry-After'), response.status === 429 ? 900_000 : 30_000);
+        setStatus(response.status === 429 ? 'Too many requests. Sync paused until the server allows retrying.' : 'Canvas unavailable. Waiting before retrying…');
+        throw new Error('Retry later');
+      }
+      return response;
     };
-    const save = async () => {
-      if (stopped || saving || !pending.current || revision.current < 0) return;
-      const elements = pending.current; pending.current = null; saving = true; setStatus('Saving…');
+    const schedule = () => {
+      clearTimeout(timer);
+      if (stopped || busy || (document.hidden && !pending.current)) return;
+      const due = pending.current && revision.current >= 0 ? saveAt : readAt;
+      timer = setTimeout(() => void sync(), Math.max(0, due - Date.now(), retryAt - Date.now()));
+    };
+    const sync = async () => {
+      if (stopped || busy) return;
+      const writing = pending.current !== null && revision.current >= 0;
+      if ((!writing && document.hidden) || Date.now() < Math.max(retryAt, writing ? saveAt : readAt)) { schedule(); return; }
+      busy = true;
+      const elements = writing ? pending.current : null;
+      if (writing) { pending.current = null; setStatus('Saving…'); }
       try {
-        const response = await fetch(`${api}/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
-          body: JSON.stringify({ elements, expectedRevision: revision.current }) });
-        if (response.status === 409) {
-          const latestResponse = await fetch(`${api}/${id}`, { signal: controller.signal });
+        const response = await request(writing ? { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ elements, expectedRevision: revision.current }) } : undefined);
+        if (writing && response.status === 409) {
+          const latestResponse = await request();
           if (!latestResponse.ok) throw new Error();
           const latest = await latestResponse.json() as Scene;
           if (stopped) return;
           const merged = reconcileElements(editor.getSceneElementsIncludingDeleted(), normalize(latest) as unknown as Parameters<typeof reconcileElements>[1], editor.getAppState());
           revision.current = latest.revision; pending.current = merged; signature.current = JSON.stringify(merged);
           editor.updateScene({ elements: merged });
+          saveAt = Date.now() + 1500;
           setStatus('Merging canvas updates…');
-        } else if (!response.ok) throw new Error();
-        else { const scene = await response.json() as Scene; revision.current = scene.revision; setStatus('Saved'); }
-      } catch { if (!stopped) { pending.current = pending.current ?? elements; setStatus('Save failed. Retrying…'); } }
-      finally {
-        saving = false;
-        if (!stopped) {
-          if (pending.current) timer.current = setTimeout(() => void save(), 1500);
-          else void load();
+        } else {
+          if (!response.ok) throw new Error();
+          const scene = await response.json() as Scene;
+          if (stopped) return;
+          if (writing) revision.current = scene.revision;
+          else if (!pending.current && scene.revision !== revision.current) apply(scene);
+          if (!pending.current) setStatus('Saved');
         }
-      }
+        failures = 0;
+        retryAt = 0;
+        // PUT already returns the saved revision; no follow-up GET is needed.
+        readAt = Date.now() + pollMs;
+      } catch {
+        if (!stopped) {
+          if (writing) pending.current = pending.current ?? elements;
+          if (retryAt <= Date.now()) {
+            retryAt = Date.now() + Math.min(60_000, 5000 * 2 ** Math.min(failures++, 4));
+            setStatus(writing ? 'Save failed. Retrying shortly…' : 'Canvas unavailable. Retrying shortly…');
+          }
+        }
+      } finally { busy = false; schedule(); }
     };
-    saveRef.current = () => { void save(); };
-    void load();
-    const poll = setInterval(() => { if (pending.current) void save(); else void load(); }, 2000);
-    return () => { stopped = true; controller.abort(); clearInterval(poll); clearTimeout(timer.current); saveRef.current = () => {}; };
+    saveRef.current = () => { saveAt = Date.now() + 600; schedule(); };
+    const visibility = () => schedule();
+    const refresh = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || event.source !== window.parent ||
+          event.data?.type !== 'podfolio:canvas-updated' || event.data?.canvasId !== id) return;
+      readAt = 0;
+      schedule(); // Preserve any pending edits and the server's retry deadline.
+    };
+    document.addEventListener('visibilitychange', visibility);
+    window.addEventListener('message', refresh);
+    schedule();
+    return () => {
+      stopped = true; controller.abort(); clearTimeout(timer); saveRef.current = () => {};
+      document.removeEventListener('visibilitychange', visibility);
+      window.removeEventListener('message', refresh);
+    };
   }, [id, valid, editor]);
   if (!valid) return <p role="alert" className="p-6">Invalid canvas link. Create a drawing in the assistant first.</p>;
   return <main className="h-screen flex flex-col bg-white">
@@ -78,8 +117,8 @@ export default function MCPCanvas() {
     <div className="flex-1 min-h-0"><Excalidraw excalidrawAPI={setEditor} theme="light" UIOptions={{ canvasActions: { loadScene: false, saveToActiveFile: false, export: false }, tools: { image: false } }} onChange={elements => {
       const next = JSON.stringify(elements);
       if (revision.current < 0 || next === signature.current) return;
-      signature.current = next; pending.current = elements; setStatus('Unsaved changes'); clearTimeout(timer.current);
-      timer.current = setTimeout(() => saveRef.current(), 600);
+      signature.current = next; pending.current = elements; setStatus('Unsaved changes');
+      saveRef.current();
     }} /></div>
   </main>;
 }

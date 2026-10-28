@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
 import express from '../../pod-backend/node_modules/express/index.js';
+import { verifyCanvasPolling } from './canvas-polling.browser.mjs';
 
 process.env.RESEND_API_KEY = 're_test_placeholder';
 process.env.NVIDIA_NIM_API_KEY = 'test-placeholder';
@@ -32,13 +33,14 @@ try {
   page.on('pageerror', error => errors.push(error.message));
   page.on('request', request => { if (request.url().includes('/assets/') && request.url().endsWith('.js')) scripts.push(request.url()); });
   // The local app uses same-origin /api. Override only if an old developer .env bakes in another origin.
-  await page.context().route('**/api/**', async route => {
+  const proxyApi = async route => {
     const url = new URL(route.request().url());
     const headers = { 'access-control-allow-origin': base, 'access-control-allow-methods': 'GET,POST,PUT,OPTIONS', 'access-control-allow-headers': 'content-type' };
     if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
     const response = await route.fetch({ url: `${base}${url.pathname}${url.search}` });
     await route.fulfill({ response, headers: { ...response.headers(), ...headers } });
-  });
+  };
+  await context.route('**/api/**', proxyApi);
   await page.goto(base); await page.waitForTimeout(500);
   assert.equal(scripts.some(url => /MCPCanvas|percentages|subset-shared/.test(url)), false);
   await page.goto(`${base}/mcp`);
@@ -74,6 +76,7 @@ try {
   assert.match(svg, /Browser edit/); assert.match(svg, /Start/);
   const xmlError = await page.evaluate(svg => new DOMParser().parseFromString(svg, 'image/svg+xml').querySelector('parsererror')?.textContent, svg);
   assert.equal(xmlError, undefined);
+  await verifyCanvasPolling(browser, base, id, proxyApi);
   await page.screenshot({ path: '/tmp/podfolio-mcp-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);

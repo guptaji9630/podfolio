@@ -216,3 +216,15 @@ test('structured backend errors reach the caller without retrying tool actions',
     assert.equal(calls, 1);
   } finally { globalThis.fetch = originalFetch; }
 });
+
+
+test('canvas Retry-After accepts seconds and dates with safe fallback for absent or invalid headers', async () => {
+  const { retryAfterMs } = await load('src/utils/retryAfter.ts');
+  const now = Date.parse('2026-10-28T00:00:00Z');
+  assert.equal(retryAfterMs('120', 900000, now), 120000);
+  assert.equal(retryAfterMs('Wed, 28 Oct 2026 00:02:00 GMT', 900000, now), 120000);
+  for (const value of [null, '', 'invalid', '-1', 'Tue, 27 Oct 2026 00:00:00 GMT']) {
+    assert.equal(retryAfterMs(value, 900000, now), 900000);
+  }
+  assert.equal(retryAfterMs('0', 900000, now), 1000);
+});

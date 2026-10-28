@@ -16,6 +16,7 @@ export default function MCPPlayground() {
   const [busy, setBusy] = useState(false);
   const [canvasUrl, setCanvasUrl] = useState('');
   const request = useRef<AbortController | null>(null);
+  const canvasFrame = useRef<HTMLIFrameElement | null>(null);
   useEffect(() => {
     const controller = new AbortController();
     mcpService.listTools(conversationId, controller.signal).then(setCatalog).catch(() => { if (!controller.signal.aborted) setError('Tool discovery is unavailable. Check that the backend and canvas services are running.'); });
@@ -30,7 +31,10 @@ export default function MCPPlayground() {
       const response = await chatService.sendMessage(next, true, controller.signal, conversationId);
       if (controller.signal.aborted) return;
       setMessages(prev => [...prev, { role: 'assistant' as const, content: response.message, ...response }].slice(-CHAT_HISTORY_LIMIT));
-      if (response.canvasUrl) setCanvasUrl(response.canvasUrl);
+      if (response.canvasUrl) {
+        setCanvasUrl(response.canvasUrl);
+        canvasFrame.current?.contentWindow?.postMessage({ type: 'podfolio:canvas-updated', canvasId: conversationId }, window.location.origin);
+      }
     } catch (err) { if (!controller.signal.aborted) setError(err instanceof Error ? err.message : 'Request failed.'); }
     finally { if (request.current === controller) { request.current = null; setBusy(false); } }
   };
@@ -65,7 +69,7 @@ export default function MCPPlayground() {
           <button disabled={busy || !input.trim()} className="self-end rounded-lg bg-primary px-5 py-3 text-sm disabled:opacity-40">Send</button>
         </form>
         {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
-        {canvasUrl && <section><div className="flex items-center justify-between mb-3"><h2 className="text-sm font-semibold">Your canvas</h2><a href={canvasUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-300 underline">Open canvas ↗</a></div><iframe title="Interactive Excalidraw canvas" src={canvasUrl} className="w-full h-[520px] rounded-xl border border-white/15 bg-white" /></section>}
+        {canvasUrl && <section><div className="flex items-center justify-between mb-3"><h2 className="text-sm font-semibold">Your canvas</h2><a href={canvasUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-300 underline">Open canvas ↗</a></div><iframe ref={canvasFrame} title="Interactive Excalidraw canvas" src={canvasUrl} className="w-full h-[520px] rounded-xl border border-white/15 bg-white" /></section>}
       </section>
     </div>
   </main>;

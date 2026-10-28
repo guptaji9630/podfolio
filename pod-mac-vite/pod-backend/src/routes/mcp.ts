@@ -1,222 +1,90 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, type RequestHandler } from 'express';
+import { timingSafeEqual, randomUUID } from 'node:crypto';
+import axios from 'axios';
+import { z } from 'zod';
+import { ENV } from '../config/env.js';
 import { mcpToolRegistry } from '../services/mcpToolRegistry.js';
+import { agentService, localTools } from '../services/agentService.js';
+import { chatMiddleware } from './unifiedChat.js';
+import { contactLimiter } from '../middleware/rateLimit.js';
 import { emailService } from '../services/emailService.js';
-import { MCPConnectionConfig, MCPToolCall } from '../types/mcp.types.js';
 
 const router = Router();
-
-// Admin authorization middleware for MCP admin endpoints
-const requireAdminAuth = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-  const adminToken = process.env.MCP_ADMIN_TOKEN;
-  
-  if (!adminToken) {
-    return res.status(500).json({ success: false, error: 'Admin token not configured' });
-  }
-  
-  if (!authHeader || authHeader !== `Bearer ${adminToken}`) {
-    return res.status(401).json({ success: false, error: 'Unauthorized' });
-  }
-  
+function isAdmin(header?: string) {
+  const received = Buffer.from(header ?? ''); const expected = Buffer.from(`Bearer ${ENV.MCP_ADMIN_TOKEN}`);
+  return !!ENV.MCP_ADMIN_TOKEN && received.length === expected.length && timingSafeEqual(received, expected);
+}
+const admin: RequestHandler = (req, res, next) => {
+  if (!isAdmin(req.headers.authorization)) return res.status(401).json({ success: false, error: { message: 'Admin authorization required.' } });
   next();
 };
-
-// Helper to create safe connection DTO (no secrets)
-const toConnectionDTO = (config: MCPConnectionConfig, info: any) => ({
-  id: config.id,
-  name: config.name,
-  transport: config.transport,
-  url: config.url,
-  command: config.command,
-  args: config.args,
-  enabled: config.enabled,
-  status: info?.status || 'disconnected',
-  toolsCount: info?.tools?.length || 0,
-});
-
-// All admin endpoints require authorization
-router.use(requireAdminAuth);
-
-router.get('/connections', (_req: Request, res: Response) => {
-  const configs = mcpToolRegistry.getAllConfigs();
-  const servers = configs.map(config => {
-    const info = mcpToolRegistry.getServerInfo(config.id);
-    return toConnectionDTO(config, info);
-  });
-  res.json({ success: true, data: servers });
-});
-
-router.post('/connections', async (req: Request, res: Response) => {
+router.post('/agent/chat', (req, res, next) => {
+  if (req.body?.emailTo && req.body.emailTo !== ENV.RECIPIENT_EMAIL) return res.status(400).json({ error: { message: 'Email recipient must be the portfolio owner.' } });
+  if (req.body?.sendEmail === true) return res.status(400).json({ error: { message: 'Request email explicitly in a chat message or use send-output.' } });
+  req.body = { ...req.body, options: { ...req.body?.options, ...(req.body?.conversationId ? { conversationId: req.body.conversationId } : {}) } };
+  next();
+}, ...chatMiddleware);
+router.get('/tools', async (req, res) => {
+  const id = z.string().uuid().safeParse(req.query.conversationId ?? randomUUID());
+  if (!id.success) return res.status(400).json({ error: { message: 'Invalid conversation ID.' } });
   try {
-    const config: MCPConnectionConfig = req.body;
-    // Validate required fields
-    if (!config.id || !config.name || !config.transport) {
-      return res.status(400).json({ success: false, error: 'Missing required fields' });
-    }
-    mcpToolRegistry.registerConnection(config);
-    res.json({ success: true, message: 'Connection registered' });
-  } catch (error) {
-    res.status(400).json({ success: false, error: (error as Error).message });
-  }
+    const servers = await mcpToolRegistry.tools(id.data, AbortSignal.timeout(10000), isAdmin(req.headers.authorization));
+    res.json({ success: true, data: { localTools, servers } });
+  } catch { res.status(502).json({ error: { message: 'MCP tool discovery is unavailable.' } }); }
 });
-
-router.post('/connections/:id/connect', async (req: Request, res: Response) => {
-  try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const serverInfo = await mcpToolRegistry.connect(id);
-    res.json({ success: true, data: serverInfo });
-  } catch (error) {
-    res.status(500).json({ success: false, error: (error as Error).message });
-  }
+router.get('/cache/stats', admin, (_req, res) => res.json({ success: true, data: agentService.cache.getStats() }));
+router.get('/connections', admin, (_req, res) => res.json({ success: true, data: mcpToolRegistry.list() }));
+router.post('/connections', admin, (req, res) => {
+  try { mcpToolRegistry.register(req.body); res.json({ success: true }); }
+  catch { res.status(400).json({ error: { message: 'Invalid MCP connection.' } }); }
 });
-
-router.post('/connections/:id/disconnect', async (req: Request, res: Response) => {
+router.post('/connections/:id/:action', admin, async (req, res) => {
+  if (!['connect', 'disconnect'].includes(req.params.action)) return res.sendStatus(404);
   try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    await mcpToolRegistry.disconnect(id);
-    res.json({ success: true, message: 'Disconnected' });
-  } catch (error) {
-    res.status(500).json({ success: false, error: (error as Error).message });
-  }
+    mcpToolRegistry.enable(req.params.id, req.params.action === 'connect');
+    const servers = req.params.action === 'connect' ? await mcpToolRegistry.tools(randomUUID(), AbortSignal.timeout(10000), true) : [];
+    const connected = servers.find(s => s.serverId === req.params.id);
+    if (req.params.action === 'connect' && connected?.status !== 'connected') return res.status(502).json({ error: { message: 'MCP connection failed.' } });
+    res.json({ success: true, data: connected });
+  } catch { res.status(400).json({ error: { message: 'Unknown connection.' } }); }
 });
-
-router.delete('/connections/:id', async (req: Request, res: Response) => {
-  try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    mcpToolRegistry.removeConnection(id);
-    res.json({ success: true, message: 'Connection removed' });
-  } catch (error) {
-    res.status(500).json({ success: false, error: (error as Error).message });
-  }
+router.delete('/connections/:id', admin, (req, res) => { mcpToolRegistry.remove(req.params.id); res.json({ success: true }); });
+const toolCallSchema = z.object({
+  serverId: z.string().min(1).max(64), name: z.string().min(1).max(100), arguments: z.record(z.unknown()), conversationId: z.string().uuid(),
 });
-
-router.get('/tools', async (_req: Request, res: Response) => {
+router.post('/tools/call', admin, async (req, res) => {
+  const parsed = toolCallSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: { message: 'Invalid tool call.' } });
   try {
-    const tools = await mcpToolRegistry.listAllTools();
-    console.log('MCP Tools endpoint called, returning:', JSON.stringify(tools, null, 2));
-    res.json({ success: true, data: tools });
-  } catch (error) {
-    console.error('MCP Tools error:', error);
-    res.status(500).json({ success: false, error: (error as Error).message });
-  }
+    const p = parsed.data;
+    const data = await mcpToolRegistry.call(p.serverId, p.name, p.arguments, p.conversationId, AbortSignal.timeout(20000), true);
+    res.json({ success: true, data });
+  } catch { res.status(502).json({ error: { message: 'Tool execution failed.' } }); }
 });
-
-router.post('/tools/call', async (req: Request, res: Response) => {
-  try {
-    const { serverId, name, arguments: args } = req.body as { serverId: string; name: string; arguments: Record<string, unknown> };
-    const call: MCPToolCall = { name, arguments: args };
-    const result = await mcpToolRegistry.callTool(serverId, call);
-    res.json({ success: true, data: result });
-  } catch (error) {
-    res.status(500).json({ success: false, error: (error as Error).message });
-  }
+router.post('/agent/send-output', contactLimiter, async (req, res) => {
+  const parsed = z.object({ subject: z.string().min(1).max(200), content: z.string().min(1).max(60000) }).strict().safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: { message: 'Supply subject and content.' } });
+  const result = await emailService.sendAgentOutput(parsed.data);
+  res.status(result.success ? 200 : 502).json({ success: result.success, data: result.success ? { messageId: result.messageId } : undefined });
 });
-
-router.post('/agent/chat', async (req: Request, res: Response) => {
+// The backend selects the upstream host. The UUID is an unguessable scene capability.
+router.all('/canvas/:id/:export?', async (req, res) => {
+  if (!z.string().uuid().safeParse(req.params.id).success ||
+      (req.params.export && req.params.export !== 'export.svg') ||
+      !['GET', 'PUT'].includes(req.method) || (req.params.export && req.method !== 'GET')) return res.sendStatus(400);
+  const controller = new AbortController();
+  const abort = () => { if (!res.writableEnded) controller.abort(); };
+  res.once('close', abort);
   try {
-    const { messages, conversationId } = req.body;
-    const { agentService } = await import('../services/agentService.js');
-    const response = await agentService.processMessage(messages, { conversationId });
-    res.json({ success: true, data: response });
-  } catch (error) {
-    res.status(500).json({ success: false, error: (error as Error).message });
-  }
-});
-
-router.post('/agent/detect-tool', async (req: Request, res: Response) => {
-  try {
-    const { message } = req.body;
-    const { agentService: agentServiceInstance } = await import('../services/agentService.js');
-    const tools = agentServiceInstance.getAvailableTools();
-    
-    // Use the same detection logic as agentService
-    const lower = message.toLowerCase();
-    
-    // Check for "list tools" / "what tools" / "available tools" queries
-    if (/(what tools|list tools|available tools|show tools|tools available)/.test(lower)) {
-      return res.json({ 
-        success: true, 
-        detected: true, 
-        tool: { name: 'list_available_tools', description: 'List all available tools' },
-        allTools: tools.map(t => ({ name: t.name, description: t.description }))
-      });
-    }
-    
-    // Check for excalidraw/drawing related queries - prefer create_from_mermaid for flowcharts/diagrams
-    if (/(draw|diagram|sketch|excalidraw|whiteboard|chart|flowchart|mind.?map|flow.?chart)/.test(lower)) {
-      // Find excalidraw-related MCP tools - prefer create_from_mermaid for flowcharts
-      for (const tool of tools) {
-        const toolName = tool.name.toLowerCase();
-        const toolDesc = tool.description?.toLowerCase() || '';
-        
-        // For flowchart/diagram requests, prefer create_from_mermaid
-        if ((/flowchart|flow.?chart|diagram/.test(lower)) && toolName === 'create_from_mermaid') {
-          return res.json({ 
-            success: true, 
-            detected: true, 
-            tool: { name: tool.name, description: tool.description },
-            allTools: tools.map(t => ({ name: t.name, description: t.description }))
-          });
-        }
-        
-        // For general draw requests
-        if (toolName === 'create_element') {
-          return res.json({ 
-            success: true, 
-            detected: true, 
-            tool: { name: tool.name, description: tool.description },
-            allTools: tools.map(t => ({ name: t.name, description: t.description }))
-          });
-        }
-        
-        // Other excalidraw tools
-        if (toolName.includes('excalidraw') || toolName.includes('draw') || toolName.includes('diagram') || toolDesc.includes('excalidraw') || toolDesc.includes('draw') || toolDesc.includes('diagram') || toolDesc.includes('flowchart') || toolDesc.includes('mermaid')) {
-          return res.json({ 
-            success: true, 
-            detected: true, 
-            tool: { name: tool.name, description: tool.description },
-            allTools: tools.map(t => ({ name: t.name, description: t.description }))
-          });
-        }
-      }
-    }
-    
-    // Check for MCP tools by name matching (name or description)
-    for (const tool of tools) {
-      const keywords = tool.name.toLowerCase().split('_');
-      const descKeywords = (tool.description || '').toLowerCase().split(/[\s_]+/);
-      const allKeywords = [...keywords, ...descKeywords];
-      if (allKeywords.some(k => k.length > 2 && lower.includes(k))) {
-        return res.json({ 
-          success: true, 
-          detected: true, 
-          tool: { name: tool.name, description: tool.description },
-          allTools: tools.map(t => ({ name: t.name, description: t.description }))
-        });
-      }
-    }
-    res.json({ 
-      success: true, 
-      detected: false, 
-      allTools: tools.map(t => ({ name: t.name, description: t.description }))
+    const response = await axios.request({
+      url: `${ENV.EXCALIDRAW_SERVICE_URL}/canvas/${req.params.id}${req.params.export ? '/export.svg' : ''}`,
+      method: req.method, data: req.method === 'PUT' ? req.body : undefined, signal: controller.signal,
+      timeout: 8000, maxContentLength: 512 * 1024, responseType: req.params.export ? 'text' : 'json',
     });
+    if (req.params.export) res.type('image/svg+xml').attachment('podfolio-canvas.svg');
+    res.status(response.status).send(response.data);
   } catch (error) {
-    res.status(500).json({ success: false, error: (error as Error).message });
-  }
+    if (!res.destroyed) res.status(axios.isAxiosError(error) ? error.response?.status ?? 502 : 502).json({ error: { message: 'Canvas service is unavailable or the scene changed. Refresh and retry.' } });
+  } finally { res.off('close', abort); }
 });
-
-router.post('/agent/send-output', async (req: Request, res: Response) => {
-  try {
-    const { subject, content } = req.body;
-    const result = await emailService.sendAgentOutput({
-      to: process.env.RECIPIENT_EMAIL || 'abhishekg9630@gmail.com',
-      subject: subject || 'AI Agent Output',
-      agentOutput: content,
-    });
-    res.json({ success: true, data: result });
-  } catch (error) {
-    res.status(500).json({ success: false, error: (error as Error).message });
-  }
-});
-
 export default router;

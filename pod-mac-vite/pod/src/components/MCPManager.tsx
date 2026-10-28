@@ -4,7 +4,9 @@ import { MCPConnectionConfig } from '../types/mcp.types';
 
 export const MCPManager: React.FC = () => {
   const [connections, setConnections] = useState<MCPConnectionConfig[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [token, setToken] = useState('');
+  const [authenticated, setAuthenticated] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [newConnection, setNewConnection] = useState<Partial<MCPConnectionConfig>>({
     id: '',
@@ -17,7 +19,7 @@ export const MCPManager: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    loadConnections();
+    return () => mcpService.setAdminToken('');
   }, []);
 
   const loadConnections = async () => {
@@ -95,6 +97,18 @@ export const MCPManager: React.FC = () => {
     { value: 'sse', label: 'SSE (Server-Sent Events)' },
     { value: 'stdio', label: 'STDIO (Local Process)' },
   ];
+
+  if (!authenticated) return <form className="p-4 space-y-3 text-white" onSubmit={async e => {
+    e.preventDefault(); mcpService.setAdminToken(token); setError(null); setLoading(true);
+    try { setConnections(await mcpService.getConnections()); setAuthenticated(true); setToken(''); }
+    catch { setError('Admin token was rejected or the backend is unavailable.'); }
+    finally { setLoading(false); }
+  }}>
+    <label className="block">Admin token<input aria-label="Admin token" autoComplete="off" type="password" value={token} onChange={e => setToken(e.target.value)} className="block mt-2 w-full rounded border border-white/20 bg-white/5 p-2" required /></label>
+    <button disabled={loading} className="rounded bg-primary px-4 py-2 disabled:opacity-50">{loading ? 'Connecting…' : 'Manage connections'}</button>
+    {error && <p role="alert" className="text-red-300">{error}</p>}
+    <a href="/mcp" target="_blank" rel="noreferrer" className="block text-blue-300 underline">Open the public MCP demo</a>
+  </form>;
 
   if (loading) return <div className="p-4 text-center">Loading...</div>;
 
@@ -231,7 +245,7 @@ export const MCPManager: React.FC = () => {
                   <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] mt-1">
                     <span className="px-2 py-0.5 rounded bg-[var(--color-bg-tertiary)]">{conn.transport.toUpperCase()}</span>
                     <span className={`px-2 py-0.5 rounded ${
-                      conn.status === 'connected' ? 'bg-green-500/20 text-green-400' :
+                      conn.enabled ? 'bg-green-500/20 text-green-400' :
                       conn.status === 'error' ? 'bg-red-500/20 text-red-400' :
                       'bg-gray-500/20 text-gray-400'
                     }`}>
@@ -243,7 +257,7 @@ export const MCPManager: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {conn.status !== 'connected' && (
+                  {!conn.enabled && (
                     <button
                       onClick={() => handleConnect(conn.id)}
                       className="px-3 py-1.5 text-sm rounded-lg bg-[var(--color-accent-primary)] text-white hover:opacity-90 transition-opacity"
@@ -251,7 +265,7 @@ export const MCPManager: React.FC = () => {
                       Connect
                     </button>
                   )}
-                  {conn.status === 'connected' && (
+                  {conn.enabled && (
                     <button
                       onClick={() => handleDisconnect(conn.id)}
                       className="px-3 py-1.5 text-sm rounded-lg bg-[var(--color-bg-tertiary)] border border-[var(--color-border-default)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-hover)] transition-colors"

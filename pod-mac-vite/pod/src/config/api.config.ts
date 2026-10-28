@@ -8,7 +8,7 @@ export const API_ENDPOINTS = {
   
   // Chat endpoints
   CHAT: {
-    MESSAGE: '/api/nim/chat/completions',
+    MESSAGE: '/api/chat',
     HISTORY: '/api/chat/history',
   },
   

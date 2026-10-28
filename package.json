@@ -2,10 +2,10 @@
   "name": "podfolio",
   "private": true,
   "scripts": {
-    "install:apps": "npm install --prefix pod-mac-vite/pod && npm install --prefix pod-mac-vite/pod-backend",
-    "build": "npm run build --prefix pod-mac-vite/pod && npm run build --prefix pod-mac-vite/pod-backend",
-    "typecheck": "npm run typecheck --prefix pod-mac-vite/pod && npm run type-check --prefix pod-mac-vite/pod-backend",
-    "test": "npm run test --prefix pod-mac-vite/pod && npm run test --prefix pod-mac-vite/pod-backend",
+    "install:apps": "npm install --prefix pod-mac-vite/pod && npm install --prefix pod-mac-vite/pod-backend && npm install --prefix mcp-server-excalidraw",
+    "build": "npm run build --prefix pod-mac-vite/pod && npm run build --prefix pod-mac-vite/pod-backend && npm run build --prefix mcp-server-excalidraw",
+    "typecheck": "npm run typecheck --prefix pod-mac-vite/pod && npm run type-check --prefix pod-mac-vite/pod-backend && npm run typecheck --prefix mcp-server-excalidraw",
+    "test": "npm run test --prefix pod-mac-vite/pod && npm run test --prefix pod-mac-vite/pod-backend && npm test --prefix mcp-server-excalidraw",
     "validate": "npm run typecheck && npm run build && npm test"
   }
 }

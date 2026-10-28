@@ -22,7 +22,13 @@ class ApiClient {
           signal: controller.signal,
         });
         if (!response.ok) {
-          throw { message: `HTTP ${response.status}: ${response.statusText}`, status: response.status };
+          const body = await response.json().catch(() => undefined);
+          const message = body?.error?.message;
+          throw {
+            message: typeof message === 'string' && message.trim() ? message.slice(0, 500) : `HTTP ${response.status}: ${response.statusText}`,
+            code: typeof body?.error?.code === 'string' ? body.error.code : undefined,
+            status: response.status,
+          };
         }
         // Keep the timeout active while consuming the body too.
         const data = await response.json();

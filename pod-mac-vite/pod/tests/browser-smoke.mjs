@@ -46,7 +46,7 @@ const waitForCompletions = async (expected) => {
   while (completionRequests < expected && Date.now() < deadline) await page.waitForTimeout(100);
   assert.ok(completionRequests >= expected, `Expected ${expected} completions; saw ${completionRequests}`);
 };
-await page.route('**/api/nim/chat/completions',route=>new Promise(resolve=>{completionRequests++;resolveChat=async()=>{try{await route.fulfill({json:{choices:[{message:{content:'OBSOLETE REPLY'}}]}});}catch{}resolve();};}));
+await page.route(/\/api\/(?:nim\/chat\/completions|chat)$/,route=>new Promise(resolve=>{completionRequests++;resolveChat=async()=>{try{await route.fulfill({json:route.request().url().endsWith('/api/chat') ? {success:true,data:{message:'OBSOLETE REPLY',cached:false,source:'llm'}} : {choices:[{message:{content:'OBSOLETE REPLY'}}]}});}catch{}resolve();};}));
 await page.locator('input').fill('Tell me about QA skills');await page.locator('input').press('Enter');
 await page.waitForTimeout(100);
 await page.getByRole('button',{name:'delete Clear'}).click();

@@ -47,7 +47,7 @@ test('API base and legacy endpoints do not duplicate /api', async () => {
   globalThis.fetch = async value => { url = value; return { ok: true, json: async () => ({}) }; };
   try {
     await apiClient.post('/api/contact', {});
-    assert.equal(new URL(url).pathname, '/api/contact');
+    assert.equal(new URL(url, 'http://localhost:5173').pathname, '/api/contact');
   } finally { globalThis.fetch = originalFetch; }
 });
 
@@ -130,12 +130,12 @@ test('failed writes are not retried and completion context stays bounded', async
     let payload;
     globalThis.fetch = async (_, options) => {
       payload = JSON.parse(options.body);
-      return { ok: true, json: async () => ({ choices: [{ message: { content: 'Reply' } }] }) };
+      return { ok: true, json: async () => ({ success: true, data: { message: 'Reply', source: 'llm', cached: false } }) };
     };
     const messages = Array.from({ length: 50 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', content: `Message ${i}` }));
     await chatService.sendMessage(messages, false);
-    assert.equal(payload.messages.length, 21);
-    assert.equal(payload.messages[1].content, 'Message 30');
+    assert.equal(payload.messages.length, 20);
+    assert.equal(payload.messages[0].content, 'Message 30');
     await chatService.sendMessage(messages.map(m => ({ ...m, content: 'a'.repeat(12000) })), false);
     assert.ok(payload.messages.reduce((total, message) => total + message.content.length, 0) <= 60000);
     const controller = new AbortController();
@@ -199,4 +199,32 @@ test('completed requests remove cancellation listeners even when abort never fir
     assert.equal(result.success, true);
     assert.equal(listeners.size, 0, 'once does not remove a listener until the event fires');
   } finally { globalThis.fetch = originalFetch; }
+});
+
+
+test('structured backend errors reach the caller without retrying tool actions', async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    return { ok: false, status: 502, statusText: 'Bad Gateway', json: async () => ({ success: false, error: { code: 'MCP_CONNECTION_FAILED', message: 'Check the Excalidraw connection on port 3001.' } }) };
+  };
+  try {
+    const response = await apiClient.post('/api/chat', {});
+    assert.equal(response.error.code, 'MCP_CONNECTION_FAILED');
+    assert.equal(response.error.message, 'Check the Excalidraw connection on port 3001.');
+    assert.equal(calls, 1);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+
+test('canvas Retry-After accepts seconds and dates with safe fallback for absent or invalid headers', async () => {
+  const { retryAfterMs } = await load('src/utils/retryAfter.ts');
+  const now = Date.parse('2026-10-28T00:00:00Z');
+  assert.equal(retryAfterMs('120', 900000, now), 120000);
+  assert.equal(retryAfterMs('Wed, 28 Oct 2026 00:02:00 GMT', 900000, now), 120000);
+  for (const value of [null, '', 'invalid', '-1', 'Tue, 27 Oct 2026 00:00:00 GMT']) {
+    assert.equal(retryAfterMs(value, 900000, now), 900000);
+  }
+  assert.equal(retryAfterMs('0', 900000, now), 1000);
 });

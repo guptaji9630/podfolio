@@ -5,7 +5,6 @@ import { ENV } from './config/env.js';
 import { apiLimiter } from './middleware/rateLimit.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import routes from './routes/index.js';
-import { mcpToolRegistry } from './services/mcpToolRegistry.js';
 
 const app = express();
 
@@ -28,6 +27,7 @@ app.use(
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Retry-After'],
   })
 );
 
@@ -57,19 +57,6 @@ app.use(notFoundHandler);
 // Error handler (must be last)
 app.use(errorHandler);
 
-// Initialize MCP connections
-for (const config of ENV.MCP_CONNECTIONS) {
-  mcpToolRegistry.registerConnection(config);
-  if (config.enabled) {
-    try {
-      await mcpToolRegistry.connect(config.id);
-      console.log(`✅ Connected to MCP server: ${config.name}`);
-    } catch (error) {
-      console.error(`❌ Failed to connect to MCP server ${config.name}:`, error);
-    }
-  }
-}
-
 // Start server
 const PORT = ENV.PORT;
 const server = app.listen(PORT, () => {
@@ -89,11 +76,6 @@ let shuttingDown = false;
 const shutdown = async () => {
   if (shuttingDown) return;
   shuttingDown = true;
-  
-  // Disconnect all MCP servers (non-blocking to avoid delaying shutdown)
-  mcpToolRegistry.disconnectAll().catch(err => {
-    console.error('Error disconnecting MCP servers:', err);
-  });
   
   const deadline = setTimeout(() => {
     server.closeAllConnections();

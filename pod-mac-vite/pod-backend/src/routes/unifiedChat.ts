@@ -4,6 +4,7 @@ import { validateChat } from '../middleware/chatValidation.js';
 import { contactLimiter } from '../middleware/rateLimit.js';
 import { agentService, isEmailRequest } from '../services/agentService.js';
 import { SYSTEM_INSTRUCTION } from '../config/assistant.js';
+import { ServiceError } from '../utils/serviceError.js';
 import type { AgentMessage } from '../services/nimClient.js';
 
 export const chatOptionsSchema = z.object({
@@ -31,8 +32,18 @@ export const handleChat: RequestHandler = async (req, res) => {
   try {
     const data = await agentService.processMessage(req.body.messages as AgentMessage[], req.body.options, controller.signal);
     if (!res.destroyed && !controller.signal.aborted) res.json({ success: true, data });
-  } catch {
-    if (!res.destroyed && !req.aborted) res.status(controller.signal.aborted ? 504 : 502).json({ success: false, error: { message: 'Chat or tool service is unavailable. Please try again.' } });
+  } catch (error) {
+    if (!res.destroyed && !req.aborted) {
+      const timeout = controller.signal.aborted;
+      const known = error instanceof ServiceError ? error : undefined;
+      res.status(timeout ? 504 : known?.status ?? 502).json({
+        success: false,
+        error: {
+          code: timeout ? 'CHAT_TIMEOUT' : known?.code ?? 'CHAT_SERVICE_UNAVAILABLE',
+          message: timeout ? 'The request timed out. Please try again.' : known?.message ?? 'Chat or tool service is unavailable. Please try again.',
+        },
+      });
+    }
   } finally { clearTimeout(deadline); res.off('close', abort); req.off('aborted', abort); }
 };
 export const chatMiddleware = [validateChat, validateOptions, emailLimit, handleChat];

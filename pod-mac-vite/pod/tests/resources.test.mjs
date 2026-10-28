@@ -200,3 +200,19 @@ test('completed requests remove cancellation listeners even when abort never fir
     assert.equal(listeners.size, 0, 'once does not remove a listener until the event fires');
   } finally { globalThis.fetch = originalFetch; }
 });
+
+
+test('structured backend errors reach the caller without retrying tool actions', async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    return { ok: false, status: 502, statusText: 'Bad Gateway', json: async () => ({ success: false, error: { code: 'MCP_CONNECTION_FAILED', message: 'Check the Excalidraw connection on port 3001.' } }) };
+  };
+  try {
+    const response = await apiClient.post('/api/chat', {});
+    assert.equal(response.error.code, 'MCP_CONNECTION_FAILED');
+    assert.equal(response.error.message, 'Check the Excalidraw connection on port 3001.');
+    assert.equal(calls, 1);
+  } finally { globalThis.fetch = originalFetch; }
+});

@@ -4,6 +4,7 @@ import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { z } from 'zod';
 import { ENV } from '../config/env.js';
+import { ServiceError } from '../utils/serviceError.js';
 
 export const connectionSchema = z.object({
   id: z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/), name: z.string().min(1).max(100),
@@ -38,7 +39,7 @@ export class MCPToolRegistry {
   }
   private async withClient<T>(id: string, conversationId: string, signal: AbortSignal | undefined, run: (client: Client) => Promise<T>): Promise<T> {
     const config = this.configs.get(id);
-    if (!config?.enabled) throw new Error('MCP connection is unavailable.');
+    if (!config?.enabled) throw new ServiceError('MCP_CONNECTION_UNAVAILABLE', 'The MCP connection is disabled or missing. Enable it in MCP connection settings.');
     const client = new Client({ name: 'podfolio', version: '1.0.0' });
     const headers = { ...config.headers, ...(id === 'excalidraw' ? { 'x-canvas-id': conversationId } : {}) };
     const transport = config.transport === 'stdio'
@@ -49,6 +50,10 @@ export class MCPToolRegistry {
     try {
       await client.connect(transport, { signal, timeout: 8000 });
       return await run(client);
+    } catch (error) {
+      signal?.throwIfAborted();
+      if (error instanceof ServiceError) throw error;
+      throw new ServiceError('MCP_CONNECTION_FAILED', 'The MCP connection failed. Check that Excalidraw is running and its transport and URL match the service. The local demo uses HTTP on port 3001.');
     } finally { await client.close().catch(() => {}); await transport.close().catch(() => {}); }
   }
   async tools(conversationId: string, signal?: AbortSignal, admin = false) {
@@ -63,7 +68,7 @@ export class MCPToolRegistry {
   async call(serverId: string, name: string, args: Record<string, unknown>, conversationId: string, signal?: AbortSignal, admin = false) {
     if (!admin && (serverId !== 'excalidraw' || !PUBLIC_MCP_TOOLS.has(name))) throw new Error('Tool requires admin authorization.');
     const result = await this.withClient(serverId, conversationId, signal, client => client.callTool({ name, arguments: args }, undefined, { signal, timeout: 15000 }));
-    if (result.isError) throw new Error((Array.isArray(result.content) ? result.content : []).filter((c: { type: string }) => c.type === 'text').map((c: { text?: string }) => c.text).join('\n') || 'MCP tool failed.');
+    if (result.isError) throw new ServiceError('MCP_TOOL_FAILED', 'Excalidraw could not create this drawing. Use a basic Mermaid flowchart with simple nodes and --> arrows.');
     return result;
   }
 }

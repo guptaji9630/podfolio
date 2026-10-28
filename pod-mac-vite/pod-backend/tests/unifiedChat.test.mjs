@@ -104,6 +104,23 @@ test('natural-language diagrams generate Mermaid before tools; failures and nega
   await assert.rejects(failed.processMessage([{ role: 'user', content: 'skills?' }]), /offline/);
   assert.equal(failed.cache.getStats().size, 0);
 });
+test('a broken configured MCP connection returns a specific safe error; correcting it restores flowcharts', async () => {
+  const { mcpToolRegistry } = await import('../dist/services/mcpToolRegistry.js');
+  mcpToolRegistry.register({ id: 'excalidraw', name: 'Excalidraw', transport: 'http', url: `${base}/missing-mcp`, enabled: true, headers: { Authorization: 'do-not-leak-this-secret' } });
+  try {
+    const failed = await post('/api/chat', payload('Draw a flowchart'));
+    assert.equal(failed.status, 502);
+    const body = await failed.json();
+    assert.equal(body.error.code, 'MCP_CONNECTION_FAILED');
+    assert.match(body.error.message, /HTTP on port 3001/);
+    assert.doesNotMatch(JSON.stringify(body), /do-not-leak|Authorization|stack/);
+  } finally {
+    mcpToolRegistry.register({ id: 'excalidraw', name: 'Excalidraw', transport: 'http', url: process.env.EXCALIDRAW_MCP_URL, enabled: true });
+  }
+  const restored = await post('/api/chat', payload('Draw a flowchart'));
+  assert.equal(restored.status, 200);
+  assert.equal((await restored.json()).data.toolCalls[0].name, 'create_from_mermaid');
+});
 after(async () => {
   for (const item of [server, provider, canvasServer]) item.closeAllConnections();
   await Promise.all([server, provider, canvasServer].map(item => new Promise(resolve => item.close(resolve))));

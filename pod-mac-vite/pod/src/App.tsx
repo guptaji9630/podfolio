@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { Desktop } from '../components/Desktop';
 import { MenuBar } from '../components/MenuBar';
 import { Dock } from '../components/Dock';
@@ -124,4 +124,13 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+const MCPPlayground = lazy(() => import('./components/MCPPlayground'));
+const MCPCanvas = lazy(() => import('./components/MCPCanvas'));
+const RoutedApp: React.FC = () => {
+  const path = window.location.pathname;
+  if (path === '/mcp' || path === '/mcp/canvas') return <Suspense fallback={<div role="status" className="p-6 bg-[#1e1e1e] text-white min-h-screen">Loading canvas tools…</div>}>
+    {path === '/mcp/canvas' ? <MCPCanvas /> : <MCPPlayground />}
+  </Suspense>;
+  return <App />;
+};
+export default RoutedApp;

@@ -17,6 +17,12 @@ export const useChat = () => {
     setInputValue(value.slice(0, CHAT_INPUT_LIMIT));
   }, []);
   const [isTyping, setIsTyping] = useState(false);
+  const [conversationId] = useState(() => {
+    const stored = storage.get<string>(KEYS.CHAT_CONVERSATION_ID);
+    return typeof stored === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(stored) ? stored : crypto.randomUUID();
+  });
+  const conversationRef = useRef(conversationId);
+  const [error, setError] = useState('');
   const requestRef = useRef<AbortController | null>(null);
   useEffect(() => () => {
     requestRef.current?.abort();
@@ -41,6 +47,7 @@ export const useChat = () => {
   useEffect(() => {
     if (messages.length > 1) {
       storage.set(KEYS.CHAT_HISTORY, messages);
+      storage.set(KEYS.CHAT_CONVERSATION_ID, conversationRef.current);
     }
   }, [messages]);
 
@@ -65,20 +72,25 @@ export const useChat = () => {
 
     setInput('');
     setMessages(prev => [...prev, userMessage].slice(-CHAT_HISTORY_LIMIT));
+    setError('');
     setIsTyping(true);
 
     try {
-      const response = await chatService.sendMessage([...messages, userMessage], true, controller.signal);
+      const response = await chatService.sendMessage([...messages, userMessage], true, controller.signal, conversationRef.current);
       if (controller.signal.aborted || requestRef.current !== controller) return;
       const assistantMessage: ChatMessage = {
         role: 'assistant',
         content: response.message,
         timestamp: new Date(),
         toolCalls: response.toolCalls,
+        canvasUrl: response.canvasUrl,
+        downloadUrl: response.downloadUrl,
+        cached: response.cached,
+        source: response.source,
       };
       setMessages(prev => [...prev, assistantMessage].slice(-CHAT_HISTORY_LIMIT));
     } catch (error) {
-      if (!controller.signal.aborted) console.error('Chat request failed:', error);
+      if (!controller.signal.aborted) setError(error instanceof Error ? error.message : 'Chat request failed. Please retry.');
     } finally {
       if (requestRef.current === controller) {
         requestRef.current = null;
@@ -91,12 +103,16 @@ export const useChat = () => {
     requestRef.current?.abort();
     requestRef.current = null;
     setIsTyping(false);
+    conversationRef.current = crypto.randomUUID();
+    setError('');
     setMessages([INITIAL_MESSAGE]);
     storage.remove(KEYS.CHAT_HISTORY);
+    storage.remove(KEYS.CHAT_CONVERSATION_ID);
   }, []);
 
   return {
     messages,
+    error,
     input,
     setInput,
     isTyping,

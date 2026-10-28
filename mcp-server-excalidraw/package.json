@@ -1,0 +1,39 @@
+{
+  "name": "mcp-server-excalidraw",
+  "version": "2.1.2",
+  "description": "Excalidraw MCP Server - Run as standalone service on Render",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.service.json",
+    "start": "node dist/service.js",
+    "dev": "tsx watch src/service.ts",
+    "test": "node --test tests/*.test.mjs",
+    "typecheck": "tsc -p tsconfig.service.json --noEmit"
+  },
+  "keywords": [
+    "mcp",
+    "excalidraw",
+    "diagram",
+    "drawing",
+    "canvas"
+  ],
+  "author": "Abhishek Gupta",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.18.2",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.5",
+    "tsx": "^4.7.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

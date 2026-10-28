@@ -47,7 +47,7 @@ test('API base and legacy endpoints do not duplicate /api', async () => {
   globalThis.fetch = async value => { url = value; return { ok: true, json: async () => ({}) }; };
   try {
     await apiClient.post('/api/contact', {});
-    assert.equal(new URL(url).pathname, '/api/contact');
+    assert.equal(new URL(url, 'http://localhost:5173').pathname, '/api/contact');
   } finally { globalThis.fetch = originalFetch; }
 });
 
@@ -130,12 +130,12 @@ test('failed writes are not retried and completion context stays bounded', async
     let payload;
     globalThis.fetch = async (_, options) => {
       payload = JSON.parse(options.body);
-      return { ok: true, json: async () => ({ choices: [{ message: { content: 'Reply' } }] }) };
+      return { ok: true, json: async () => ({ success: true, data: { message: 'Reply', source: 'llm', cached: false } }) };
     };
     const messages = Array.from({ length: 50 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', content: `Message ${i}` }));
     await chatService.sendMessage(messages, false);
-    assert.equal(payload.messages.length, 21);
-    assert.equal(payload.messages[1].content, 'Message 30');
+    assert.equal(payload.messages.length, 20);
+    assert.equal(payload.messages[0].content, 'Message 30');
     await chatService.sendMessage(messages.map(m => ({ ...m, content: 'a'.repeat(12000) })), false);
     assert.ok(payload.messages.reduce((total, message) => total + message.content.length, 0) <= 60000);
     const controller = new AbortController();

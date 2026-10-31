@@ -1,4 +1,5 @@
 const STORAGE_KEYS = {
+  CHAT_CONVERSATION_ID: 'portfolio_chat_conversation_id',
   CHAT_HISTORY: 'portfolio_chat_history',
   THEME_PREFERENCE: 'portfolio_theme',
   WALLPAPER: 'portfolio_wallpaper',

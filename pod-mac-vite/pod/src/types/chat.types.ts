@@ -2,6 +2,10 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'tool';
   content: string;
   timestamp?: Date;
+  canvasUrl?: string;
+  downloadUrl?: string;
+  cached?: boolean;
+  source?: 'cache' | 'llm' | 'mcp' | 'local';
   toolCalls?: ToolCall[];
 }
 
@@ -22,6 +26,10 @@ export interface ChatApiResponse {
   toolCalls?: ToolCall[];
   conversationId?: string;
   error?: string;
+  canvasUrl?: string;
+  downloadUrl?: string;
+  cached?: boolean;
+  source?: 'cache' | 'llm' | 'mcp' | 'local';
 }
 
 export interface AITool {

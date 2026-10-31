@@ -22,7 +22,13 @@ class ApiClient {
           signal: controller.signal,
         });
         if (!response.ok) {
-          throw { message: `HTTP ${response.status}: ${response.statusText}`, status: response.status };
+          const body = await response.json().catch(() => undefined);
+          const message = body?.error?.message;
+          throw {
+            message: typeof message === 'string' && message.trim() ? message.slice(0, 500) : `HTTP ${response.status}: ${response.statusText}`,
+            code: typeof body?.error?.code === 'string' ? body.error.code : undefined,
+            status: response.status,
+          };
         }
         // Keep the timeout active while consuming the body too.
         const data = await response.json();
@@ -38,7 +44,7 @@ class ApiClient {
       if (callerSignal?.aborted) return this.cancelled<T>();
       const retryable = failure.name === 'AbortError' ||
         failure.message?.includes('fetch') ||
-        (failure.status >= 500 && failure.status < 600);
+        (failure.status !== undefined && failure.status >= 500 && failure.status < 600);
       // Retrying writes can duplicate emails or other side effects.
       if (options.method !== 'GET' || attempt >= API_CONFIG.RETRY_ATTEMPTS || !retryable) {
         return { success: false, error: { message: failure.message || 'Network error occurred', code: failure.code, status: failure.status } };

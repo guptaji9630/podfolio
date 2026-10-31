@@ -14,6 +14,11 @@ export const ENV = {
   NVIDIA_NIM_API_URL: process.env.NVIDIA_NIM_API_URL || 'https://integrate.api.nvidia.com/v1',
   NVIDIA_NIM_MODEL: process.env.NVIDIA_NIM_MODEL || 'meta/llama-3.1-8b-instruct',
   
+  NVIDIA_EMBEDDING_MODEL: process.env.NVIDIA_EMBEDDING_MODEL || 'nvidia/nemotron-3-embed-1b',
+  MCP_ADMIN_TOKEN: process.env.MCP_ADMIN_TOKEN || '',
+  EXCALIDRAW_MCP_URL: process.env.EXCALIDRAW_MCP_URL || 'http://localhost:3001/mcp',
+  EXCALIDRAW_SERVICE_URL: process.env.EXCALIDRAW_SERVICE_URL || 'http://localhost:3001',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
   // Security
   ALLOWED_ORIGINS: (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(','),
   RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX || '100'),

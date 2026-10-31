@@ -1,3 +1,4 @@
+import { logEvent, failureDetails } from '../utils/logger.js';
 import { Resend } from 'resend';
 import { ENV } from '../config/env.js';
 import type { EmailData } from '../types/index.js';
@@ -11,14 +12,14 @@ export class EmailService {
         <div style="background: linear-gradient(135deg, #0a84ff 0%, #0056d6 100%); padding: 30px; text-align: center;">
           <h2 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">New Contact Form Submission</h2>
         </div>
-        
+
         <div style="padding: 30px;">
           <div style="background: #f5f5f7; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
             <p style="margin: 0 0 12px 0; color: #1d1d1f;"><strong style="color: #0a84ff;">Subject:</strong> ${this.escapeHtml(data.subject)}</p>
             ${data.senderName ? `<p style="margin: 0 0 12px 0; color: #1d1d1f;"><strong style="color: #0a84ff;">From:</strong> ${this.escapeHtml(data.senderName)}</p>` : ''}
             ${data.senderEmail ? `<p style="margin: 0; color: #1d1d1f;"><strong style="color: #0a84ff;">Email:</strong> <a href="mailto:${this.escapeHtml(data.senderEmail)}" style="color: #0a84ff; text-decoration: none;">${this.escapeHtml(data.senderEmail)}</a></p>` : ''}
           </div>
-          
+
           <div style="margin: 20px 0;">
             <h3 style="color: #1d1d1f; font-size: 18px; margin: 0 0 12px 0;">Message:</h3>
             <div style="background: #f5f5f7; padding: 20px; border-radius: 8px; border-left: 4px solid #0a84ff;">
@@ -26,7 +27,7 @@ export class EmailService {
             </div>
           </div>
         </div>
-        
+
         <div style="background: #f5f5f7; padding: 20px; text-align: center; border-top: 1px solid #e5e5e7;">
           <p style="color: #86868b; font-size: 12px; margin: 0;">
             This message was sent via your portfolio contact form
@@ -36,20 +37,32 @@ export class EmailService {
     `;
 
     try {
+      logEvent('email.started');
       const result = await resend.emails.send({
         from: 'Portfolio Contact <onboarding@resend.dev>',
         to: data.to,
-        reply_to: data.senderEmail || undefined,
+        replyTo: data.senderEmail || undefined,
         subject: `Portfolio Contact: ${data.subject}`,
         html,
       });
 
-      console.log('✅ Email sent successfully:', result.data?.id || result);
-      return { success: true, messageId: result.data?.id || 'sent' };
+      if (result.error) { logEvent('email.failed', { code: 'EMAIL_PROVIDER_REJECTED' }); return { success: false, error: result.error.message }; }
+      if (!result.data?.id) { logEvent('email.failed', { code: 'EMAIL_UNCONFIRMED' }); return { success: false, error: 'Email provider did not confirm delivery.' }; }
+      logEvent('email.completed');
+      return { success: true, messageId: result.data.id };
     } catch (error: any) {
-      console.error('❌ Email sending failed:', error);
+      logEvent('email.failed', failureDetails(error));
       return { success: false, error: error.message };
     }
+  }
+
+  async sendAgentOutput(params: { subject: string; content: string }) {
+    return this.sendContactEmail({
+      to: ENV.RECIPIENT_EMAIL,
+      subject: params.subject,
+      message: params.content,
+      senderName: 'Portfolio AI assistant',
+    });
   }
 
   private escapeHtml(text: string): string {

@@ -144,8 +144,9 @@ export const PongGame: React.FC = () => {
 
   useEffect(() => {
     const checkMobile = () => {
-      const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-        (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+      const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const hasTouchPoints = navigator.maxTouchPoints !== undefined && navigator.maxTouchPoints > 2;
+      const mobile = isMobileUserAgent || hasTouchPoints;
       setIsMobile(mobile);
       if (mobile) setShowMobileBanner(true);
     };

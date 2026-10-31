@@ -9,7 +9,7 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
 
 export const ENV = {
   // API Configuration
-  API_BASE_URL: getEnvVar('VITE_API_BASE_URL', 'http://localhost:3002/api'),
+  API_BASE_URL: getEnvVar('VITE_API_BASE_URL', '/api'),
   NVIDIA_NIM_API_URL: getEnvVar('VITE_NVIDIA_NIM_API_URL', '/api/nim/chat/completions'),
   NVIDIA_NIM_MODEL: getEnvVar('VITE_NVIDIA_NIM_MODEL', 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning'),
   

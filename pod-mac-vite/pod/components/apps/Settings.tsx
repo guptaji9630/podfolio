@@ -1,4 +1,5 @@
 import { previewUrl, previewSrcSet } from '../../src/utils/images';
+import { MCPManager } from '../../src/components/MCPManager';
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -16,7 +17,7 @@ interface SettingsProps {
   setAccentColor: (color: string) => void;
 }
 
-type SettingsTab = 'wifi' | 'bluetooth' | 'wallpaper' | 'appearance';
+type SettingsTab = 'wifi' | 'bluetooth' | 'wallpaper' | 'appearance' | 'mcp';
 
 const BLUETOOTH_DEVICES = [
   { name: 'AirPods Pro', icon: 'headphones', status: 'Connected' },
@@ -28,6 +29,8 @@ const menuItems = [
   { id: 'wifi' as const, label: 'Wi-Fi', icon: 'wifi', color: 'bg-blue-500' },
   { id: 'bluetooth' as const, label: 'Bluetooth', icon: 'bluetooth', color: 'bg-blue-600' },
   { id: 'wallpaper' as const, label: 'Wallpaper', icon: 'image', color: 'bg-sky-500' },
+  { id: 'appearance' as const, label: 'Appearance', icon: 'palette', color: 'bg-purple-500' },
+  { id: 'mcp' as const, label: 'MCP Tools', icon: 'extension', color: 'bg-green-500' },
 ] as const;
 
 const accentColors = [
@@ -452,6 +455,41 @@ export const Settings: React.FC<SettingsProps> = ({
                   The accent color is used throughout the system for highlights, buttons, and interactive elements.
                   Changes will be applied immediately.
                 </p>
+              </motion.section>
+            </motion.div>
+          </motion.div>
+        );
+
+      case 'mcp':
+        return (
+          <motion.div
+            key="mcp"
+            variants={tabVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="flex flex-col gap-6"
+          >
+            <motion.div
+              className="sticky top-0 z-10 p-4 md:p-8 backdrop-blur-md"
+            >
+              <motion.h1
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-xl font-bold text-white"
+              >
+                MCP Tools
+              </motion.h1>
+            </motion.div>
+            <motion.div
+              variants={staggerContainer}
+              className="px-4 md:px-8 pb-10 flex flex-col gap-6"
+            >
+              <motion.section
+                variants={itemVariants}
+                className="w-full"
+              >
+                <MCPManager />
               </motion.section>
             </motion.div>
           </motion.div>

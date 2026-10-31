@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { Desktop } from '../components/Desktop';
 import { MenuBar } from '../components/MenuBar';
 import { Dock } from '../components/Dock';
@@ -27,10 +27,10 @@ const App: React.FC = () => {
     storage.get(KEYS.WALLPAPER, WALLPAPERS[0]) || WALLPAPERS[0]
   );
   const [wifiEnabled, setWifiEnabled] = useState<boolean>(
-    storage.get(KEYS.WIFI_ENABLED, true)
+    storage.get<boolean>(KEYS.WIFI_ENABLED, true) ?? true
   );
   const [bluetoothEnabled, setBluetoothEnabled] = useState<boolean>(
-    storage.get(KEYS.BLUETOOTH_ENABLED, true)
+    storage.get<boolean>(KEYS.BLUETOOTH_ENABLED, true) ?? true
   );
   const [accentColor, setAccentColor] = useState<string>(
     storage.get(KEYS.ACCENT_COLOR, '#0a84ff') || '#0a84ff'
@@ -124,4 +124,13 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+const MCPPlayground = lazy(() => import('./components/MCPPlayground'));
+const MCPCanvas = lazy(() => import('./components/MCPCanvas'));
+const RoutedApp: React.FC = () => {
+  const path = window.location.pathname;
+  if (path === '/mcp' || path === '/mcp/canvas') return <Suspense fallback={<div role="status" className="p-6 bg-[#1e1e1e] text-white min-h-screen">Loading canvas tools…</div>}>
+    {path === '/mcp/canvas' ? <MCPCanvas /> : <MCPPlayground />}
+  </Suspense>;
+  return <App />;
+};
+export default RoutedApp;

@@ -1,4 +1,5 @@
 import express from 'express';
+import { requestLogger } from './utils/logger.js';
 import cors from 'cors';
 import helmet from 'helmet';
 import { ENV } from './config/env.js';
@@ -7,6 +8,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import routes from './routes/index.js';
 
 const app = express();
+app.use(requestLogger);
 
 // Security middleware
 app.use(helmet());
@@ -27,6 +29,7 @@ app.use(
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Retry-After', 'X-Request-ID'],
   })
 );
 
@@ -72,9 +75,10 @@ const server = app.listen(PORT, () => {
 
 // Stop accepting requests and allow active connections to finish before exit.
 let shuttingDown = false;
-const shutdown = () => {
+const shutdown = async () => {
   if (shuttingDown) return;
   shuttingDown = true;
+  
   const deadline = setTimeout(() => {
     server.closeAllConnections();
     process.exit(1);

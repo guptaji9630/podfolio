@@ -1,5 +1,6 @@
 import { CHAT_INPUT_LIMIT } from '../../src/config/chat';
 import React from 'react';
+import { API_CONFIG } from '../../src/config/api.config';
 import { useChat } from '../../src/hooks/useChat';
 import { formatRelativeTime } from '../../src/utils/formatters';
 import { motion, AnimatePresence } from 'motion/react';
@@ -16,7 +17,7 @@ const typingVariants = {
 };
 
 export const Chat: React.FC = () => {
-  const { messages, input, setInput, isTyping, sendMessage, clearHistory, scrollRef } = useChat();
+  const { messages, input, setInput, isTyping, sendMessage, clearHistory, scrollRef, error } = useChat();
 
   const handleSend = () => {
     sendMessage();
@@ -45,15 +46,27 @@ export const Chat: React.FC = () => {
           />
           <span className="text-xs md:text-sm text-white/70">AI Assistant Online</span>
         </div>
-        <motion.button
-          onClick={clearHistory}
-          whileHover={{ scale: 1.1, rotate: 10 }}
-          whileTap={{ scale: 0.9 }}
-          className="text-[11px] md:text-xs text-white/40 hover:text-white/70 flex items-center gap-1"
-        >
-          <span className="material-symbols-outlined text-[14px] md:text-[16px]">delete</span>
-          <span className="hidden sm:inline">Clear</span>
-        </motion.button>
+        <div className="flex items-center gap-2">
+          <a
+            href="/mcp"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 px-2 py-1 text-[11px] md:text-xs text-white/60 hover:text-white/90 transition-colors rounded bg-white/5 hover:bg-white/10"
+            title="Open Excalidraw Canvas"
+          >
+            <span className="material-symbols-outlined text-[14px] md:text-[16px]">draw</span>
+            <span className="hidden sm:inline">Canvas</span>
+          </a>
+          <motion.button
+            onClick={clearHistory}
+            whileHover={{ scale: 1.1, rotate: 10 }}
+            whileTap={{ scale: 0.9 }}
+            className="text-[11px] md:text-xs text-white/40 hover:text-white/70 flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-[14px] md:text-[16px]">delete</span>
+            <span className="hidden sm:inline">Clear</span>
+          </motion.button>
+        </div>
       </motion.div>
 
       {/* Messages */}
@@ -82,6 +95,20 @@ export const Chat: React.FC = () => {
                 whileHover={{ scale: 1.01 }}
               >
                 <div className="whitespace-pre-wrap break-words">{m.content}</div>
+                {m.canvasUrl && m.role === 'assistant' && (
+                  <a
+                    href={m.canvasUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 mt-2 px-2 py-1 text-[10px] md:text-xs text-primary hover:text-primary/80 transition-colors bg-primary/10 rounded"
+                    title="Open Excalidraw Canvas"
+                  >
+                    <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                    <span className="hidden sm:inline">Open in Excalidraw Canvas</span>
+                  </a>
+                )}
+                {m.downloadUrl && <a href={`${API_CONFIG.BASE_URL.replace(/\/$/, '')}${API_CONFIG.BASE_URL.replace(/\/$/, '').endsWith('/api') ? m.downloadUrl.replace(/^\/api/, '') : m.downloadUrl}`} download className="block mt-2 text-blue-300 underline">Download SVG</a>}
+                {m.cached && <span className="text-[10px] text-white/40">Cached response</span>}
                 {m.timestamp && (
                   <div className="text-[9px] md:text-[10px] text-white/30 mt-1">
                     {formatRelativeTime(m.timestamp)}
@@ -107,6 +134,8 @@ export const Chat: React.FC = () => {
         )}
       </motion.div>
 
+      {error && <p role="alert" className="px-4 py-2 text-xs text-red-300">{error}</p>}
+      <a href="/mcp" target="_blank" rel="noreferrer" className="px-4 py-2 text-xs text-blue-300 hover:underline">Try the canvas playground ↗</a>
       {/* Input */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

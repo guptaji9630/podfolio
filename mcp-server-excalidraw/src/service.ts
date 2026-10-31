@@ -116,7 +116,13 @@ export function createMcpServer(store: SceneStore, id: string) {
     try { return result(fn()); } catch (error) { return { content: [{ type: 'text' as const, text: (error as Error).message }], isError: true }; }
   };
   server.tool('create_element', 'Add an editable shape to the current canvas', shapeSchema.shape, args => safe(() => store.append(id, [element(args)])));
-  server.tool('create_from_mermaid', 'Add a basic Mermaid flowchart with simple nodes and --> arrows', { mermaidDiagram: z.string().min(1).max(10000) }, args => safe(() => store.append(id, fromMermaid(args.mermaidDiagram))));
+  server.tool('create_from_mermaid', 'Add a basic Mermaid flowchart with simple nodes and --> arrows', { mermaidDiagram: z.string().min(1).max(10000) }, args => {
+    let elements: Element[];
+    try { elements = fromMermaid(args.mermaidDiagram); }
+    catch { return { ...result({ code: 'DIAGRAM_SYNTAX_INVALID' }), isError: true }; }
+    // Syntax errors are reported only before mutation, so the caller can safely repair source.
+    return safe(() => store.append(id, elements));
+  });
   server.tool('query_elements', 'Read current canvas elements', {}, () => result(store.read(id)));
   server.tool('export_scene', 'Export current Excalidraw scene as JSON', {}, () => result({ type: 'excalidraw', version: 2, source: 'podfolio', elements: store.read(id).elements }));
   server.tool('export_to_image', 'Prepare an SVG download of the current canvas', { format: z.literal('svg').default('svg') }, () => result({ downloadPath: `/canvas/${id}/export.svg`, elements: store.read(id).elements.length }));

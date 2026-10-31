@@ -22,6 +22,8 @@ test('MCP initialize/list/call work across separate stateless HTTP requests', as
     const stale = await fetch(`${base}/canvas/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ elements: [], expectedRevision: 0 }) });
     assert.equal(stale.status, 409);
     const fail = await client.callTool({ name: 'create_from_mermaid', arguments: { mermaidDiagram: 'sequenceDiagram\nA->>B: hello' } }); assert.equal(fail.isError, true);
+    assert.equal(JSON.parse(fail.content[0].text).code, 'DIAGRAM_SYNTAX_INVALID');
+    assert.equal((await (await fetch(`${base}/canvas/${id}`)).json()).revision, scene.revision);
   } finally { await client.close(); }
 });
 test('scene TTL, bounded capacity and element limits', () => {

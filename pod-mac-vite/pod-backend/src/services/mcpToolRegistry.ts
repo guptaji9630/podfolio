@@ -86,7 +86,19 @@ export class MCPToolRegistry {
     if (!admin && (serverId !== 'excalidraw' || !PUBLIC_MCP_TOOLS.has(name))) throw new Error('Tool requires admin authorization.');
     return traceOperation(PUBLIC_MCP_TOOLS.has(name) ? `mcp.${name}` : 'mcp.custom_tool', async () => {
       const result = await this.withClient(serverId, conversationId, signal, client => client.callTool({ name, arguments: args }, undefined, { signal, timeout: 15000 }));
-      if (result.isError) throw new ServiceError('MCP_TOOL_FAILED', 'Excalidraw could not create this drawing. Use a basic Mermaid flowchart with simple nodes and --> arrows.');
+      if (result.isError) {
+        const blocks = Array.isArray(result.content) ? result.content : [];
+        let invalidSyntax = false;
+        let limitCode: string | undefined;
+        for (const block of blocks) {
+          if (block.type !== 'text' || typeof block.text !== 'string') continue;
+          if (['SCENE_LIMIT', 'CAPACITY', 'CONFLICT'].includes(block.text)) limitCode = block.text;
+          try { invalidSyntax ||= JSON.parse(block.text)?.code === 'DIAGRAM_SYNTAX_INVALID'; } catch { /* Old/external servers may return plain text. */ }
+        }
+        if (name === 'create_from_mermaid' && invalidSyntax) throw new ServiceError('MCP_DIAGRAM_INVALID', 'Excalidraw rejected the diagram syntax before saving. Try describing simpler steps or paste a basic flowchart.');
+        if (limitCode) throw new ServiceError(`MCP_${limitCode}`, limitCode === 'SCENE_LIMIT' ? 'This canvas is full. Start a new conversation or remove elements before drawing again.' : 'The canvas service is at capacity or the scene changed. Try again later.');
+        throw new ServiceError('MCP_TOOL_FAILED', 'Excalidraw could not complete this operation. Check the canvas service and scene limits.');
+      }
       return result;
     });
   }

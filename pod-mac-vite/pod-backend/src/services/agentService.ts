@@ -1,3 +1,4 @@
+import { logEvent } from '../utils/logger.js';
 import { randomUUID } from 'node:crypto';
 import { ENV } from '../config/env.js';
 import { SYSTEM_INSTRUCTION } from '../config/assistant.js';
@@ -57,6 +58,7 @@ export class AgentService {
         return local('send_agent_output', {}, result, 'The conversation was emailed to Abhishek.');
       }
       const drawingRequested = !/\b(don't|do not|never|without|how to|how do|how can)\b/.test(lower);
+      let generatedDiagram = false;
       let tool: { name: string; arguments: Record<string, unknown> } | undefined;
       if (drawingRequested && /\b(export|download)\b.*\b(canvas|drawing|diagram|image)\b/.test(lower)) tool = { name: 'export_to_image', arguments: { format: 'svg' } };
       else if (isDiagramRequest(question)) {
@@ -66,6 +68,7 @@ export class AgentService {
             { role: 'system', content: 'You generate diagram source for an application that will call Excalidraw itself. Do not call tools or explain how to use them. Return only a basic Mermaid flowchart beginning with flowchart TD or flowchart LR. Use at most 8 nodes with simple ASCII IDs and labels in [rectangle], (ellipse), or {diamond}. Use only --> arrows, with no edge labels, subgraphs, styling, or comments. Represent the user request faithfully. No prose.' },
             ...messages.filter(m => m.role === 'user' || m.role === 'assistant').slice(-8),
           ], signal);
+          generatedDiagram = true;
           mermaid = extractMermaid(generated);
           if (!mermaid || mermaid.length > 10000) throw new ServiceError('DIAGRAM_GENERATION_FAILED', 'The model could not generate a supported flowchart. Try describing the steps and connections, or paste a basic Mermaid flowchart.');
         }
@@ -75,7 +78,24 @@ export class AgentService {
         tool = { name: 'create_element', arguments: { type: /circle|ellipse/.test(shape) ? 'ellipse' : shape === 'diamond' ? 'diamond' : 'rectangle', x: 100, y: 100, width: 180, height: 100 } };
       }
       if (tool) {
-        const result = await this.dependencies.registry.call('excalidraw', tool.name, tool.arguments, conversationId, signal);
+        let result;
+        try { result = await this.dependencies.registry.call('excalidraw', tool.name, tool.arguments, conversationId, signal); }
+        catch (error) {
+          if (!generatedDiagram || !(error instanceof ServiceError) || error.code !== 'MCP_DIAGRAM_INVALID') throw error;
+          signal?.throwIfAborted();
+          logEvent('diagram.repair_started', { code: error.code });
+          const repaired = await this.dependencies.complete([
+            { role: 'system', content: 'Repair a rejected Mermaid flowchart for a restricted renderer. Return only flowchart TD followed by at most 8 nodes. Declare nodes as A[Plain label] on separate lines, then connections as A --> B on separate lines. Labels must be single-line plain text without brackets or semicolons. Use rectangles only. No parentheses, diamonds, edge labels, subgraphs, styling, comments, markdown fences or prose. Preserve the requested topic and all essential steps. Example: flowchart TD\nA[Start]\nB[End]\nA --> B' },
+            ...messages.filter(m => m.role === 'user' || m.role === 'assistant').slice(-8),
+            { role: 'assistant', content: String(tool.arguments.mermaidDiagram) },
+            { role: 'user', content: 'The renderer rejected that syntax before saving. Rewrite it using the restricted format.' },
+          ], signal);
+          const mermaid = extractMermaid(repaired);
+          if (!mermaid || mermaid.length > 10000) throw new ServiceError('DIAGRAM_GENERATION_FAILED', 'The model could not repair the flowchart. Try listing its steps explicitly.');
+          tool = { name: 'create_from_mermaid', arguments: { mermaidDiagram: mermaid } };
+          result = await this.dependencies.registry.call('excalidraw', tool.name, tool.arguments, conversationId, signal);
+          logEvent('diagram.repair_completed');
+        }
         return { message: tool.name === 'export_to_image' ? 'Your SVG image is ready to download.' : 'Your drawing is ready. Open the canvas to edit it.',
           toolCalls: [{ ...tool, result }], canvasUrl: `${ENV.FRONTEND_URL}/mcp/canvas?canvasId=${conversationId}`,
           ...(tool.name === 'export_to_image' ? { downloadUrl: `/api/mcp/canvas/${conversationId}/export.svg` } : {}),

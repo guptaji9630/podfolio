@@ -276,3 +276,27 @@ test('explicit Exali draw waterfall prompt has reasoning budget and rejects trun
     assert.equal((await (await fetch(`${base}/api/mcp/canvas/${id}`)).json()).revision, scene.revision);
   } finally { completionText = 'QA skills answer'; finishReason = 'stop'; }
 });
+
+test('a rejected generated diagram is repaired once and saved exactly once by real MCP', async () => {
+  const { mcpToolRegistry } = await import('../dist/services/mcpToolRegistry.js');
+  const id = randomUUID(); let generations = 0;
+  const service = new AgentService({ complete: async () => ++generations === 1
+    ? 'flowchart TD; A[Requirements] -->|Next| B[Design]'
+    : 'flowchart TD\nA[Requirements]\nB[Design]\nC[Implementation]\nA --> B\nB --> C',
+    embed: async () => [1, 0], registry: mcpToolRegistry, email: {} });
+  const result = await service.processMessage([{ role: 'user', content: 'Use Exali draw tool to create a flow chart of waterfall model' }], { conversationId: id });
+  assert.equal(generations, 2); assert.equal(result.source, 'mcp');
+  const scene = await (await fetch(`${base}/api/mcp/canvas/${id}`)).json();
+  assert.equal(scene.revision, 1); assert.equal(scene.elements.length, 8);
+  assert.match(result.toolCalls[0].arguments.mermaidDiagram, /C\[Implementation\]/);
+});
+
+test('diagram repair never retries ambiguous failures, pasted source or a second invalid result', async () => {
+  const { ServiceError } = await import('../dist/utils/serviceError.js');
+  for (const [code, pasted, expected] of [['MCP_CONNECTION_FAILED', false, 1], ['MCP_TOOL_FAILED', false, 1], ['MCP_DIAGRAM_INVALID', true, 1], ['MCP_DIAGRAM_INVALID', false, 2]]) {
+    let calls = 0; let generations = 0;
+    const service = new AgentService({ complete: async () => { generations++; return 'flowchart TD; A[Start] -->|Next| B[End]'; }, embed: async () => [1, 0], email: {}, registry: { call: async () => { calls++; throw new ServiceError(code, 'Test rejection'); } } });
+    await assert.rejects(service.processMessage([{ role: 'user', content: pasted ? 'flowchart TD; A[Start] -->|Next| B[End]' : 'Draw a waterfall diagram' }]), { code });
+    assert.equal(calls, expected); assert.equal(generations, pasted ? 0 : expected);
+  }
+});

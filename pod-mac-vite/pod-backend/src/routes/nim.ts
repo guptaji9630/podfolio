@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { traceOperation } from '../utils/logger.js';
 import axios, { AxiosError } from 'axios';
 import { ENV } from '../config/env.js';
 import { validateChat } from '../middleware/chatValidation.js';
@@ -17,7 +18,7 @@ router.post('/chat/completions', validateChat, async (req: Request, res: Respons
   try {
     const { model, messages, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stream } = req.body;
 
-    const response = await axios.post(
+    const response = await traceOperation('llm.legacy_completion', () => axios.post(
       `${NIM_BASE_URL}/chat/completions`,
       {
         model: model || ENV.NVIDIA_NIM_MODEL,
@@ -44,7 +45,7 @@ router.post('/chat/completions', validateChat, async (req: Request, res: Respons
         signal: controller.signal,
         maxContentLength: 1024 * 1024,
       }
-    );
+    ));
 
     if (!controller.signal.aborted && !res.destroyed) res.json(response.data);
   } catch (error: unknown) {
@@ -53,7 +54,6 @@ router.post('/chat/completions', validateChat, async (req: Request, res: Respons
       const axiosError = error as AxiosError;
       const status = axiosError.response?.status || 500;
       const message = (axiosError.response?.data as { error?: { message?: string } })?.error?.message || axiosError.message;
-      console.error('NIM API Error:', status, message);
       return res.status(status).json({ error: { message } });
     }
     next(error);

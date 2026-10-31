@@ -54,3 +54,9 @@ Run root `npm run validate`. Run `npm run test:mcp-browser --prefix pod-mac-vite
 ![Desktop playground](screenshots/mcp-desktop.png)
 
 ![Mobile playground](screenshots/mcp-mobile.png)
+
+## Backend diagnostics
+
+The backend writes one JSON log record per event to stdout. Every HTTP request gets a generated `X-Request-ID` response header; filter terminal/hosting logs by `requestId` to follow it through LLM generation, MCP connection/tool execution and canvas proxying. `request.completed`, `request.failed` and `request.aborted` include duration, route template and HTTP status when a response completed. `operation.failed` includes a safe error code and upstream status where available. Email outcomes and cache/LLM/tool response sources are also recorded. Chat text, provider response bodies, credentials, query strings and canvas capability IDs are excluded.
+
+The unified assistant allows 2048 output tokens so reasoning models have space to produce their final answer. `llm.response` records finish reason and completion token count. A `length` finish reason returns `LLM_RESPONSE_TRUNCATED` before invoking drawing tools; empty answers return `LLM_EMPTY_RESPONSE`. No automatic retries replay drawing actions.

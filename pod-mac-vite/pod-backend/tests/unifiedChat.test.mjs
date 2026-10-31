@@ -13,13 +13,18 @@ let completions = 0;
 let redirectedRequests = 0;
 let completionText = 'QA skills answer';
 let completionStatus = 200;
-const provider = createServer((req, res) => {
+let finishReason = 'stop';
+let lastCompletionBudget;
+const provider = createServer(async (req, res) => {
   if (req.url === '/redirect-target') { redirectedRequests++; return res.end('must not reach'); }
-  req.resume(); res.setHeader('Content-Type', 'application/json');
+  let body = '';
+  for await (const chunk of req) body += chunk;
+  lastCompletionBudget = JSON.parse(body || '{}').max_tokens;
+  res.setHeader('Content-Type', 'application/json');
   if (req.url === '/embeddings') return res.end(JSON.stringify({ data: [{ embedding: [1, 0] }] }));
   completions++;
   res.statusCode = completionStatus;
-  setTimeout(() => res.end(JSON.stringify({ choices: [{ message: { content: completionText } }] })), 25);
+  setTimeout(() => res.end(JSON.stringify({ choices: [{ finish_reason: finishReason, message: { content: completionText } }] })), 25);
 });
 provider.listen(0, '127.0.0.1'); await once(provider, 'listening');
 process.env.NVIDIA_NIM_API_URL = `http://127.0.0.1:${provider.address().port}`;
@@ -117,6 +122,7 @@ test('custom diagram wording generates a canvas without caching tool actions', a
   const calls = []; const prompts = [];
   const service = new AgentService({ complete: async messages => { prompts.push(messages); return 'Here is the diagram:\n```mermaid\nflowchart TD; A[Requirements] --> B[Test execution]\n```'; }, embed: async () => [1, 0], registry: { call: async (...args) => { calls.push(args); return { content: [] }; } }, email: {} });
   for (const question of [
+    'Use Exali draw tool to create a flow chart of waterfall model',
     'create a flow diagram of manual testing', 'Give me a flowchart for checkout',
     'I need a diagram of the deployment process', 'Flow chart for signing up',
     'Could you show the testing process as a flow diagram?', 'Visualize manual testing',
@@ -130,7 +136,7 @@ test('custom diagram wording generates a canvas without caching tool actions', a
     assert.equal(new URL(response.canvasUrl).searchParams.get('canvasId'), conversationId);
     assert.equal(response.toolCalls[0].name, 'create_from_mermaid');
   }
-  assert.equal(calls.length, 10); assert.equal(prompts.length, 10);
+  assert.equal(calls.length, 11); assert.equal(prompts.length, 11);
   assert.equal(service.cache.getStats().size, 0);
   const before = calls.length;
   for (const question of ['What is a flowchart?', 'Tell me how to create a flow diagram', 'Can you explain how to draw a diagram?', 'Show me how to create a diagram', 'Do not create a diagram', 'Don’t draw a flowchart', 'Do not visualize manual testing', 'Never map out this process', 'Give me only Mermaid code for a diagram']) {
@@ -250,4 +256,23 @@ test('canvas proxy rejects URL injection and does not follow upstream redirects'
   assert.equal(response.status, 302);
   assert.equal(response.headers.get('location'), null);
   assert.equal(redirectedRequests, 0);
+});
+
+test('explicit Exali draw waterfall prompt has reasoning budget and rejects truncation before MCP mutation', async () => {
+  const id = randomUUID();
+  completionText = 'flowchart TD; A[Requirements] --> B[Design] --> C[Implementation] --> D[Testing] --> E[Deployment] --> F[Maintenance]';
+  try {
+    const response = await post('/api/chat', payload('Use Exali draw tool to create a flow chart of waterfall model', { conversationId: id }));
+    assert.equal(response.status, 200);
+    assert.equal(lastCompletionBudget, 2048);
+    const { data } = await response.json();
+    assert.equal(data.source, 'mcp'); assert.match(data.canvasUrl, new RegExp(id));
+    const scene = await (await fetch(`${base}/api/mcp/canvas/${id}`)).json();
+    assert.equal(scene.elements.filter(e => e.type === 'arrow').length, 5);
+    finishReason = 'length'; completionText = '';
+    const failed = await post('/api/chat', payload('Use Exali draw tool to create a flow chart of waterfall model', { conversationId: id }));
+    assert.equal(failed.status, 502);
+    assert.equal((await failed.json()).error.code, 'LLM_RESPONSE_TRUNCATED');
+    assert.equal((await (await fetch(`${base}/api/mcp/canvas/${id}`)).json()).revision, scene.revision);
+  } finally { completionText = 'QA skills answer'; finishReason = 'stop'; }
 });

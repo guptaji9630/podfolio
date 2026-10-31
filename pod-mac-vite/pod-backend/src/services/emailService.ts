@@ -1,3 +1,4 @@
+import { logEvent, failureDetails } from '../utils/logger.js';
 import { Resend } from 'resend';
 import { ENV } from '../config/env.js';
 import type { EmailData } from '../types/index.js';
@@ -36,6 +37,7 @@ export class EmailService {
     `;
 
     try {
+      logEvent('email.started');
       const result = await resend.emails.send({
         from: 'Portfolio Contact <onboarding@resend.dev>',
         to: data.to,
@@ -44,12 +46,12 @@ export class EmailService {
         html,
       });
 
-      if (result.error) return { success: false, error: result.error.message };
-      if (!result.data?.id) return { success: false, error: 'Email provider did not confirm delivery.' };
-      console.log('✅ Email sent successfully:', result.data?.id);
+      if (result.error) { logEvent('email.failed', { code: 'EMAIL_PROVIDER_REJECTED' }); return { success: false, error: result.error.message }; }
+      if (!result.data?.id) { logEvent('email.failed', { code: 'EMAIL_UNCONFIRMED' }); return { success: false, error: 'Email provider did not confirm delivery.' }; }
+      logEvent('email.completed');
       return { success: true, messageId: result.data.id };
     } catch (error: any) {
-      console.error('❌ Email sending failed:', error);
+      logEvent('email.failed', failureDetails(error));
       return { success: false, error: error.message };
     }
   }

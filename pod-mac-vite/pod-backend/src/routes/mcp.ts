@@ -1,5 +1,6 @@
 import { Router, type RequestHandler } from 'express';
 import { timingSafeEqual, randomUUID } from 'node:crypto';
+import { traceOperation } from '../utils/logger.js';
 import axios from 'axios';
 import { z } from 'zod';
 import { ENV } from '../config/env.js';
@@ -77,14 +78,14 @@ router.all('/canvas/:id/:export?', async (req, res) => {
   const abort = () => { if (!res.writableEnded) controller.abort(); };
   res.once('close', abort);
   try {
-    const response = await axios.request({
+    const response = await traceOperation('canvas.proxy', () => axios.request({
       baseURL: ENV.EXCALIDRAW_SERVICE_URL,
       url: `/canvas/${encodeURIComponent(id.data)}${req.params.export ? '/export.svg' : ''}`,
       // A scene endpoint must never redirect the proxy to another destination.
       maxRedirects: 0,
       method: req.method, data: req.method === 'PUT' ? req.body : undefined, signal: controller.signal,
       timeout: 8000, maxContentLength: 512 * 1024, responseType: req.params.export ? 'text' : 'json',
-    });
+    }));
     if (req.params.export) res.type('image/svg+xml').attachment('podfolio-canvas.svg');
     res.status(response.status).send(response.data);
   } catch (error) {

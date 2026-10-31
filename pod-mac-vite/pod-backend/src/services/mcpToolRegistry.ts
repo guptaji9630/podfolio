@@ -1,3 +1,4 @@
+import { traceOperation } from '../utils/logger.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
@@ -37,7 +38,10 @@ export class MCPToolRegistry {
   enable(id: string, enabled: boolean) {
     const config = this.configs.get(id); if (!config) throw new Error('Connection not found.'); config.enabled = enabled;
   }
-  private async withClient<T>(id: string, conversationId: string, signal: AbortSignal | undefined, run: (client: Client) => Promise<T>): Promise<T> {
+  private withClient<T>(id: string, conversationId: string, signal: AbortSignal | undefined, run: (client: Client) => Promise<T>): Promise<T> {
+    return traceOperation('mcp.session', () => this.connectAndRun(id, conversationId, signal, run));
+  }
+  private async connectAndRun<T>(id: string, conversationId: string, signal: AbortSignal | undefined, run: (client: Client) => Promise<T>): Promise<T> {
     const config = this.configs.get(id);
     if (!config?.enabled) throw new ServiceError('MCP_CONNECTION_UNAVAILABLE', 'The MCP connection is disabled or missing. Enable it in MCP connection settings.');
     const client = new Client({ name: 'podfolio', version: '1.0.0' });
@@ -62,7 +66,7 @@ export class MCPToolRegistry {
         clearTimeout(timer);
         if (abort) signal?.removeEventListener('abort', abort);
       }
-      return await run(client);
+      return await traceOperation('mcp.execute', () => run(client));
     } catch (error) {
       signal?.throwIfAborted();
       if (error instanceof ServiceError) throw error;
@@ -80,9 +84,11 @@ export class MCPToolRegistry {
   }
   async call(serverId: string, name: string, args: Record<string, unknown>, conversationId: string, signal?: AbortSignal, admin = false) {
     if (!admin && (serverId !== 'excalidraw' || !PUBLIC_MCP_TOOLS.has(name))) throw new Error('Tool requires admin authorization.');
-    const result = await this.withClient(serverId, conversationId, signal, client => client.callTool({ name, arguments: args }, undefined, { signal, timeout: 15000 }));
-    if (result.isError) throw new ServiceError('MCP_TOOL_FAILED', 'Excalidraw could not create this drawing. Use a basic Mermaid flowchart with simple nodes and --> arrows.');
-    return result;
+    return traceOperation(PUBLIC_MCP_TOOLS.has(name) ? `mcp.${name}` : 'mcp.custom_tool', async () => {
+      const result = await this.withClient(serverId, conversationId, signal, client => client.callTool({ name, arguments: args }, undefined, { signal, timeout: 15000 }));
+      if (result.isError) throw new ServiceError('MCP_TOOL_FAILED', 'Excalidraw could not create this drawing. Use a basic Mermaid flowchart with simple nodes and --> arrows.');
+      return result;
+    });
   }
 }
 export const mcpToolRegistry = new MCPToolRegistry();

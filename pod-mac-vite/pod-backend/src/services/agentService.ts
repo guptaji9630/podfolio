@@ -63,7 +63,7 @@ export class AgentService {
         let mermaid = extractMermaid(question);
         if (!mermaid && !/^(?:please\s+)?(?:draw|create|make|generate)\s+(?:a\s+)?(?:simple\s+)?(?:mermaid\s+)?flowchart[.!]?$/i.test(question)) {
           const generated = await this.dependencies.complete([
-            { role: 'system', content: 'Return only a basic Mermaid flowchart beginning with flowchart TD or flowchart LR. Use at most 8 nodes with simple ASCII IDs and labels in [rectangle], (ellipse), or {diamond}. Use only --> arrows, with no edge labels, subgraphs, styling, or comments. Represent the user request faithfully. No prose.' },
+            { role: 'system', content: 'You generate diagram source for an application that will call Excalidraw itself. Do not call tools or explain how to use them. Return only a basic Mermaid flowchart beginning with flowchart TD or flowchart LR. Use at most 8 nodes with simple ASCII IDs and labels in [rectangle], (ellipse), or {diamond}. Use only --> arrows, with no edge labels, subgraphs, styling, or comments. Represent the user request faithfully. No prose.' },
             ...messages.filter(m => m.role === 'user' || m.role === 'assistant').slice(-8),
           ], signal);
           mermaid = extractMermaid(generated);

@@ -1,3 +1,4 @@
+import { logEvent, failureDetails } from '../utils/logger.js';
 import { Router, type RequestHandler } from 'express';
 import { z } from 'zod';
 import { validateChat } from '../middleware/chatValidation.js';
@@ -31,8 +32,10 @@ export const handleChat: RequestHandler = async (req, res) => {
   if (req.aborted || res.destroyed) controller.abort();
   try {
     const data = await agentService.processMessage(req.body.messages as AgentMessage[], req.body.options, controller.signal);
+    logEvent('chat.completed', { source: data.source });
     if (!res.destroyed && !controller.signal.aborted) res.json({ success: true, data });
   } catch (error) {
+    logEvent('chat.failed', { ...failureDetails(error), ...(controller.signal.aborted ? { code: res.destroyed ? 'CLIENT_DISCONNECTED' : 'CHAT_TIMEOUT' } : {}) });
     if (!res.destroyed && !req.aborted) {
       const timeout = controller.signal.aborted;
       const known = error instanceof ServiceError ? error : undefined;

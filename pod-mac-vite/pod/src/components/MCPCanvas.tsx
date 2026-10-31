@@ -23,6 +23,7 @@ export default function MCPCanvas() {
     const controller = new AbortController();
     let stopped = false;
     let busy = false;
+    let rejected = false;
     let retryAt = 0;
     let failures = 0;
     let readAt = 0;
@@ -44,11 +45,18 @@ export default function MCPCanvas() {
         setStatus(response.status === 429 ? 'Too many requests. Sync paused until the server allows retrying.' : 'Canvas unavailable. Waiting before retrying…');
         throw new Error('Retry later');
       }
+      if (response.status >= 400 && response.status < 500 && response.status !== 409 && response.status !== 408) {
+        rejected = true;
+        setStatus(options?.method === 'PUT'
+          ? 'Changes could not be saved. Simplify the drawing or reduce its size, then edit to retry.'
+          : 'This canvas cannot be loaded. Check the link and reload.');
+        throw new Error('Canvas request rejected');
+      }
       return response;
     };
     const schedule = () => {
       clearTimeout(timer);
-      if (stopped || busy || (document.hidden && !pending.current)) return;
+      if (stopped || busy || rejected || (document.hidden && !pending.current)) return;
       const due = pending.current && revision.current >= 0 ? saveAt : readAt;
       timer = setTimeout(() => void sync(), Math.max(0, due - Date.now(), retryAt - Date.now()));
     };
@@ -87,14 +95,14 @@ export default function MCPCanvas() {
       } catch {
         if (!stopped) {
           if (writing) pending.current = pending.current ?? elements;
-          if (retryAt <= Date.now()) {
+          if (!rejected && retryAt <= Date.now()) {
             retryAt = Date.now() + Math.min(60_000, 5000 * 2 ** Math.min(failures++, 4));
             setStatus(writing ? 'Save failed. Retrying shortly…' : 'Canvas unavailable. Retrying shortly…');
           }
         }
       } finally { busy = false; schedule(); }
     };
-    saveRef.current = () => { saveAt = Date.now() + 600; schedule(); };
+    saveRef.current = () => { rejected = false; saveAt = Date.now() + 600; schedule(); };
     const visibility = () => schedule();
     const refresh = (event: MessageEvent) => {
       if (event.origin !== window.location.origin || event.source !== window.parent ||

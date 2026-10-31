@@ -76,3 +76,45 @@ export async function verifyCanvasPolling(browser, base, id, proxyApi) {
     console.log('PASS: canvas request budget, hidden tabs, Retry-After, recovery, no overlap and cleanup.');
   } finally { release?.(); await context.close(); }
 }
+
+
+export async function verifyRejectedCanvasSave(browser, base, id, proxyApi) {
+  const context = await browser.newContext();
+  await context.route('**/api/**', proxyApi);
+  const page = await context.newPage();
+  let writes = 0;
+  let rejectSave = true;
+  await page.clock.install();
+  await page.route('**/api/mcp/canvas/*', async route => {
+    if (route.request().method() !== 'PUT') return route.fallback();
+    writes++;
+    if (rejectSave) return route.fulfill({ status: 413, headers: { 'Access-Control-Allow-Origin': base }, json: { error: 'SCENE_LIMIT' } });
+    return route.fallback();
+  });
+  const typeText = async (text, x) => {
+    await page.keyboard.press('t');
+    await page.locator('canvas.interactive').click({ position: { x, y: 250 } });
+    await page.keyboard.type(text); await page.keyboard.press('Escape');
+  };
+  try {
+    await page.goto(`${base}/mcp/canvas?canvasId=${id}`);
+    await page.getByText('Saved', { exact: true }).waitFor();
+    await page.locator('.excalidraw').click({ position: { x: 400, y: 250 } });
+    await typeText('Retained edit', 400);
+    await page.getByText('Changes could not be saved. Simplify the drawing or reduce its size, then edit to retry.', { exact: true }).waitFor();
+    assert.equal(writes, 1);
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+    await page.clock.fastForward(120_000);
+    await new Promise(resolve => setTimeout(resolve, 100));
+    assert.equal(writes, 1, 'permanent rejection must not retry the unchanged payload');
+    rejectSave = false;
+    await page.clock.resume();
+    await typeText('Corrected edit', 700);
+    await page.getByText('Saved', { exact: true }).waitFor();
+    const scene = await (await fetch(`${base}/api/mcp/canvas/${id}`)).json();
+    assert.ok(scene.elements.some(element => element.text === 'Retained edit'));
+    assert.ok(scene.elements.some(element => element.text === 'Corrected edit'));
+    assert.equal(writes, 2);
+    console.log('PASS: rejected saves pause without discarding edits and resume after editing.');
+  } finally { await context.close(); }
+}

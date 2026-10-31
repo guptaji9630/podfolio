@@ -48,7 +48,7 @@ export const Chat: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <a
-            href="http://localhost:3001"
+            href="/mcp"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 px-2 py-1 text-[11px] md:text-xs text-white/60 hover:text-white/90 transition-colors rounded bg-white/5 hover:bg-white/10"

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
 import express from '../../pod-backend/node_modules/express/index.js';
-import { verifyCanvasPolling } from './canvas-polling.browser.mjs';
+import { verifyCanvasPolling, verifyRejectedCanvasSave } from './canvas-polling.browser.mjs';
 
 process.env.RESEND_API_KEY = 're_test_placeholder';
 process.env.NVIDIA_NIM_API_KEY = 'test-placeholder';
@@ -92,6 +92,7 @@ try {
   const xmlError = await page.evaluate(svg => new DOMParser().parseFromString(svg, 'image/svg+xml').querySelector('parsererror')?.textContent, svg);
   assert.equal(xmlError, undefined);
   await verifyCanvasPolling(browser, base, id, proxyApi);
+  await verifyRejectedCanvasSave(browser, base, id, proxyApi);
   await page.screenshot({ path: '/tmp/podfolio-mcp-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
@@ -104,6 +105,7 @@ try {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(base);
   await page.getByRole('button', { name: 'smart_toy AI Assistant' }).click();
+  assert.equal(await page.locator('a[title="Open Excalidraw Canvas"]').first().getAttribute('href'), '/mcp');
   await page.locator('input').fill('create a flow diagram of manual testing');
   await page.locator('input').press('Enter');
   const dockLink = page.getByRole('link', { name: /Open in Excalidraw Canvas/ });

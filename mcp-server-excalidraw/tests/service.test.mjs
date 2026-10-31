@@ -36,4 +36,28 @@ test('Mermaid branches preserve IDs and SVG escapes user text', () => {
   assert.ok(elements.some(e => e.type === 'diamond'));
   assert.match(toSvg([{ id: 'text', type: 'text', x: 0, y: 0, text: '<script>alert(1)</script>' }]), /&lt;script&gt;/);
 });
+test('editor can save and export a one-point pen stroke', async () => {
+  const id = randomUUID();
+  const dot = { id: 'dot', type: 'freedraw', x: 50, y: 60, width: 0, height: 0, points: [[0, 0]], strokeColor: '#123456' };
+  const saved = await fetch(`${base}/canvas/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expectedRevision: 0, elements: [dot] }) });
+  assert.equal(saved.status, 200);
+  const scene = await (await fetch(`${base}/canvas/${id}`)).json();
+  assert.deepEqual(scene.elements[0].points, [[0, 0]]);
+  const svg = await (await fetch(`${base}/canvas/${id}/export.svg`)).text();
+  assert.match(svg, /<circle/);
+});
+test('leading whitespace in pasted Mermaid preserves the header offset', () => {
+  const elements = fromMermaid('  \nflowchart TD; A[Start] --> B[End]');
+  assert.equal(elements.length, 5);
+  assert.ok(elements.some(element => element.text === 'Start'));
+});
 after(async () => { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); });
+
+test('HTML comment-like diagram labels remain escaped SVG text', () => {
+  for (const label of ['<!-- --!><img src=x onerror=alert>', '<svg onload=alert>']) {
+    const svg = toSvg(fromMermaid(`flowchart TD; A[${label}] --> B[End]`));
+    assert.doesNotMatch(svg, /<!--|<img|<svg onload/);
+    assert.match(svg, /&lt;/);
+  }
+  assert.throws(() => fromMermaid('flowchart TD; A[Start] --!> B[End]'), /Unsupported/);
+});

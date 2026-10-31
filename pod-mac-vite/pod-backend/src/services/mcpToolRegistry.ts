@@ -8,9 +8,9 @@ import { ServiceError } from '../utils/serviceError.js';
 
 export const connectionSchema = z.object({
   id: z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/), name: z.string().min(1).max(100),
-  transport: z.enum(['http', 'sse', 'stdio']), url: z.string().url().optional(),
+  transport: z.enum(['http', 'sse', 'stdio']), url: z.string().url().or(z.literal('')).optional(),
   command: z.string().min(1).max(500).optional(), args: z.array(z.string().max(1000)).max(30).optional(),
-  headers: z.record(z.string().max(4000)).optional(), env: z.record(z.string().max(4000)).optional(),
+  headers: z.record(z.string(), z.string().max(4000)).optional(), env: z.record(z.string(), z.string().max(4000)).optional(),
   enabled: z.boolean(),
 }).superRefine((value, ctx) => {
   if (value.transport === 'stdio' ? !value.command : !value.url || !/^https?:\/\//.test(value.url)) {
@@ -48,7 +48,20 @@ export class MCPToolRegistry {
         ? new SSEClientTransport(new URL(config.url!), { requestInit: { headers } })
         : new StreamableHTTPClientTransport(new URL(config.url!), { requestInit: { headers } });
     try {
-      await client.connect(transport, { signal, timeout: 8000 });
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      let abort: (() => void) | undefined;
+      try {
+        await new Promise<void>((resolve, reject) => {
+          abort = () => reject(signal?.reason ?? new Error('MCP connection cancelled.'));
+          timer = setTimeout(() => reject(new Error('MCP connection timed out.')), 8000);
+          signal?.addEventListener('abort', abort, { once: true });
+          if (signal?.aborted) { abort(); return; }
+          client.connect(transport, { signal, timeout: 8000 }).then(resolve, reject);
+        });
+      } finally {
+        clearTimeout(timer);
+        if (abort) signal?.removeEventListener('abort', abort);
+      }
       return await run(client);
     } catch (error) {
       signal?.throwIfAborted();

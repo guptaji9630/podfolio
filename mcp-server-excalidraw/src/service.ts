@@ -48,7 +48,8 @@ function element(input: z.input<typeof shapeSchema>): Element {
 /** Deliberately limited to basic flowcharts; reject unsupported syntax instead of pretending to render it. */
 export function fromMermaid(source: string): Element[] {
   if (source.length > 10000) throw new Error('Diagram exceeds 10000 characters.');
-  const header = source.trim().match(/^(?:flowchart|graph)\s+(TD|TB|LR|RL|BT)\s*;?/);
+  source = source.trim();
+  const header = source.match(/^(?:flowchart|graph)\s+(TD|TB|LR|RL|BT)\s*;?/);
   if (!header) throw new Error('Use a basic Mermaid flowchart: flowchart TD; A[Start] --> B[End]');
   const horizontal = ['LR', 'RL'].includes(header[1]);
   const reverse = ['RL', 'BT'].includes(header[1]);
@@ -63,7 +64,8 @@ export function fromMermaid(source: string): Element[] {
   };
   for (const line of source.slice(header[0].length).split(/[;\n]+/).map(s => s.trim()).filter(Boolean)) {
     if (line.startsWith('%%')) continue;
-    const chain = line.split(/\s*-->\s*/);
+    // This is a Mermaid edge delimiter, not an HTML comment sanitizer.
+    const chain = line.split('-->');
     const ids = chain.map(parseNode);
     for (let i = 1; i < ids.length; i++) edges.push([ids[i - 1], ids[i]]);
   }
@@ -100,6 +102,7 @@ export function toSvg(elements: Element[]) {
     if (e.type === 'diamond') return `<polygon points="${e.x + width / 2},${e.y} ${e.x + width},${e.y + height / 2} ${e.x + width / 2},${e.y + height} ${e.x},${e.y + height / 2}" ${attrs}/>`;
     if (e.type === 'arrow' || e.type === 'line' || e.type === 'freedraw') {
       const points = Array.isArray(e.points) ? e.points as [number, number][] : [[0, 0], [width, height]];
+      if (points.length === 1) return `<circle cx="${e.x + points[0][0]}" cy="${e.y + points[0][1]}" r="1" fill="${escape(e.strokeColor ?? '#1e1e1e')}"/>`;
       return `<polyline points="${points.map(([x, y]) => `${e.x + x},${e.y + y}`).join(' ')}" ${attrs.replace(/fill="[^"]*"/, 'fill="none"')} ${e.type === 'arrow' ? 'marker-end="url(#arrow)"' : ''}/>`;
     }
     return `<rect x="${e.x}" y="${e.y}" width="${Math.abs(width)}" height="${Math.abs(height)}" ${attrs}/>`;
@@ -140,7 +143,7 @@ export function createApp(store = new SceneStore()) {
     if (!uuid.safeParse(req.params.id).success) return res.sendStatus(400);
     res.set('Cache-Control', 'no-store').json(store.read(req.params.id));
   });
-  const savedElement = shapeSchema.partial({ width: true, height: true }).extend({ id: z.string().min(1).max(100), width: z.number().min(0).max(10000).optional(), height: z.number().min(0).max(10000).optional(), type: z.enum(['rectangle', 'ellipse', 'diamond', 'text', 'arrow', 'line', 'freedraw', 'frame']) }).passthrough();
+  const savedElement = shapeSchema.partial({ width: true, height: true }).extend({ id: z.string().min(1).max(100), width: z.number().min(0).max(10000).optional(), height: z.number().min(0).max(10000).optional(), type: z.enum(['rectangle', 'ellipse', 'diamond', 'text', 'arrow', 'line', 'freedraw', 'frame']), points: z.array(z.tuple([number, number])).min(1).max(1000).optional() }).passthrough();
   app.put('/canvas/:id', (req, res) => {
     const parsed = z.object({ expectedRevision: z.number().int().nonnegative(), elements: z.array(savedElement).max(500) }).strict().safeParse(req.body);
     if (!uuid.safeParse(req.params.id).success || !parsed.success) return res.sendStatus(400);

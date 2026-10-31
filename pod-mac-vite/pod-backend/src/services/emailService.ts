@@ -39,14 +39,15 @@ export class EmailService {
       const result = await resend.emails.send({
         from: 'Portfolio Contact <onboarding@resend.dev>',
         to: data.to,
-        reply_to: data.senderEmail || undefined,
+        replyTo: data.senderEmail || undefined,
         subject: `Portfolio Contact: ${data.subject}`,
         html,
       });
 
       if (result.error) return { success: false, error: result.error.message };
+      if (!result.data?.id) return { success: false, error: 'Email provider did not confirm delivery.' };
       console.log('✅ Email sent successfully:', result.data?.id);
-      return { success: true, messageId: result.data?.id || 'sent' };
+      return { success: true, messageId: result.data.id };
     } catch (error: any) {
       console.error('❌ Email sending failed:', error);
       return { success: false, error: error.message };

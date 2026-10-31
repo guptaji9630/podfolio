@@ -81,7 +81,7 @@ export class AgentService {
           ...(tool.name === 'export_to_image' ? { downloadUrl: `/api/mcp/canvas/${conversationId}/export.svg` } : {}),
           cached: false, source: 'mcp', conversationId };
       }
-      if (/\b(launch|start|open|play)\b.*\b(dino|pong)\b/.test(lower)) {
+      if (!/\b(?:don't|do not|never)\s+(?:launch|start|open|play)\b|^(?:what|why|how|when|where)\b/.test(lower.replace(/[’‘]/g, "'")) && /\b(launch|start|open|play)\b.*\b(dino|pong)\b/.test(lower)) {
         const gameId = lower.includes('dino') ? 'dino' : 'pong'; const mode = lower.includes('survival') ? 'survival' : 'classic';
         return local('launch_game', { gameId, ...(gameId === 'pong' ? { mode } : {}) }, { success: true }, `Launching ${gameId}.`);
       }

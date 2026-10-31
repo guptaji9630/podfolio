@@ -50,7 +50,7 @@ router.post('/connections/:id/:action', admin, async (req, res) => {
 });
 router.delete('/connections/:id', admin, (req, res) => { mcpToolRegistry.remove(req.params.id); res.json({ success: true }); });
 const toolCallSchema = z.object({
-  serverId: z.string().min(1).max(64), name: z.string().min(1).max(100), arguments: z.record(z.unknown()), conversationId: z.string().uuid(),
+  serverId: z.string().min(1).max(64), name: z.string().min(1).max(100), arguments: z.record(z.string(), z.unknown()), conversationId: z.string().uuid(),
 });
 router.post('/tools/call', admin, async (req, res) => {
   const parsed = toolCallSchema.safeParse(req.body);
@@ -69,7 +69,8 @@ router.post('/agent/send-output', contactLimiter, async (req, res) => {
 });
 // The backend selects the upstream host. The UUID is an unguessable scene capability.
 router.all('/canvas/:id/:export?', async (req, res) => {
-  if (!z.string().uuid().safeParse(req.params.id).success ||
+  const id = z.string().uuid().safeParse(req.params.id);
+  if (!id.success ||
       (req.params.export && req.params.export !== 'export.svg') ||
       !['GET', 'PUT'].includes(req.method) || (req.params.export && req.method !== 'GET')) return res.sendStatus(400);
   const controller = new AbortController();
@@ -77,7 +78,10 @@ router.all('/canvas/:id/:export?', async (req, res) => {
   res.once('close', abort);
   try {
     const response = await axios.request({
-      url: `${ENV.EXCALIDRAW_SERVICE_URL}/canvas/${req.params.id}${req.params.export ? '/export.svg' : ''}`,
+      baseURL: ENV.EXCALIDRAW_SERVICE_URL,
+      url: `/canvas/${encodeURIComponent(id.data)}${req.params.export ? '/export.svg' : ''}`,
+      // A scene endpoint must never redirect the proxy to another destination.
+      maxRedirects: 0,
       method: req.method, data: req.method === 'PUT' ? req.body : undefined, signal: controller.signal,
       timeout: 8000, maxContentLength: 512 * 1024, responseType: req.params.export ? 'text' : 'json',
     });

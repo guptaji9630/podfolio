@@ -22,7 +22,11 @@ COPY --from=builder /app/node_modules ./node_modules
 
 EXPOSE 3001
 
+# Runtime environment variables (override at deploy time)
 ENV PORT=3001
-ENV EXPRESS_SERVER_URL=http://localhost:3001
+ENV FRONTEND_URL=https://podfolio-two.vercel.app
+ENV ALLOWED_ORIGINS=https://podfolio-two.vercel.app
+# EXPRESS_SERVER_URL must be set to the public URL of this service (e.g., https://your-service.onrender.com)
+# The backend uses this to construct canvas URLs and for MCP connections
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/service.js"]

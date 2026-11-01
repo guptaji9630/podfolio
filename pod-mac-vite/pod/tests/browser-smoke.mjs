@@ -21,7 +21,7 @@ await page.addInitScript(()=>{
 });
 await page.goto(process.env.PODFOLIO_TEST_URL || 'http://127.0.0.1:4173/');
 await page.waitForTimeout(1000);
-assert.equal(scripts.some(x=>/Finder-|Mail-|Chat-|Resume-|Settings-|Game-|html2canvas|jspdf/.test(x)),false);
+assert.equal(scripts.some(x=>/Finder-|Mail-|Chat-|Resume-|Settings-|Game-|html2canvas|jspdf|resumePdf-/.test(x)),false);
 console.log('PASS initial app/PDF modules deferred',scripts.length);
 const closeTop=async()=>{const panel=await page.locator('main .glass-panel').last().elementHandle();await page.locator('main .glass-panel').last().getByRole('button',{name:'close',exact:true}).click();await page.waitForFunction(element=>!element.isConnected,panel);};
 await page.getByRole('button',{name:'settings Settings'}).click();
@@ -68,7 +68,7 @@ console.log('DINO_RESOURCES',resources);assert.equal(resources.active,0);assert.
 console.log('PASS 20 Dino cycles',resources);
 await page.getByRole('button',{name:'description Resume'}).click();
 await page.locator('[data-resume-content]').waitFor();await page.waitForTimeout(1500);
-assert.equal(scripts.some(x=>/html2canvas|jspdf/.test(x)),false);
+assert.equal(scripts.some(x=>/html2canvas|jspdf|resumePdf-/.test(x)),false);
 const original=await page.locator('[data-resume-content]').getAttribute('style');
 const download=page.waitForEvent('download',{timeout:8000}).catch(()=>null);
 await page.getByRole('button',{name:'download Download PDF',exact:true}).click();
@@ -76,18 +76,40 @@ const result=await download;
 await page.waitForTimeout(200);
 assert.ok(result, 'PDF export must download');console.log('PASS PDF download',result.suggestedFilename());
 assert.equal(await page.locator('[data-resume-content]').getAttribute('style'),original);
-assert.ok(scripts.some(x=>/html2canvas/.test(x)));console.log('PASS PDF dependencies loaded on export and styles restored');
-// Force export failure and confirm live styles still restore.
+assert.ok(scripts.some(x=>/resumePdf-/.test(x)));console.log('PASS native PDF module loaded only on export and live styles unchanged');
+// Force PDF serialization failure and confirm the error is recoverable.
 await page.evaluate(()=>{
- window.__originalDataURL=HTMLCanvasElement.prototype.toDataURL;
- HTMLCanvasElement.prototype.toDataURL=function(){throw new Error('Controlled export failure');};
+ window.__originalBlob=window.Blob;
+ window.Blob=class {constructor(){throw new Error('Controlled PDF serialization failure');}};
 });
 await page.getByRole('button',{name:'download Download PDF',exact:true}).click();
 await page.getByRole('button',{name:'download Download PDF',exact:true}).waitFor();
 await page.waitForTimeout(500);
 assert.equal(await page.locator('[data-resume-content]').getAttribute('style'),original);
-await page.evaluate(()=>{HTMLCanvasElement.prototype.toDataURL=window.__originalDataURL;});
-console.log('PASS failed PDF export restores live styles');
+await page.getByRole('alert').filter({hasText:'PDF download failed'}).waitFor();
+await page.evaluate(()=>{window.Blob=window.__originalBlob;});
+const retryDownload=page.waitForEvent('download');
+await page.getByRole('button',{name:'download Download PDF',exact:true}).click();
+assert.equal((await retryDownload).suggestedFilename(),'Abhishek_Gupta_PayPay_QA_Automation_Resume.pdf');
+assert.equal(await page.getByRole('alert').count(),0);
+console.log('PASS failed PDF export shows an error and can be retried');
+assert.match(await page.locator('[data-resume-content]').innerText(),/approximately two years/);
+await page.screenshot({path:'/tmp/paypay-resume-desktop.png'});
+for (const width of [390,320]) {
+ await page.setViewportSize({width,height:844});
+ await page.waitForTimeout(300);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+ const size=await page.locator('[data-resume-content]').evaluate(el=>({client:el.clientWidth,scroll:el.scrollWidth}));
+ assert.ok(size.scroll<=size.client,`Resume overflow at ${width}px: ${JSON.stringify(size)}`);
+ const mobileDownload=page.waitForEvent('download');
+ await page.getByRole('button',{name:'download Download PDF',exact:true}).click();
+ const mobilePDF=await mobileDownload;
+ assert.equal(mobilePDF.suggestedFilename(),'Abhishek_Gupta_PayPay_QA_Automation_Resume.pdf');
+ if(width===390) await mobilePDF.saveAs('/tmp/paypay-resume-browser.pdf');
+ await page.screenshot({path:`/tmp/paypay-resume-mobile-${width}.png`});
+}
+await page.setViewportSize({width:1440,height:900});
+console.log('PASS tailored resume at desktop, 390px and 320px; mobile PDF downloads');
 await closeTop();
 await page.evaluate(()=>{
  window.__countdowns=[];

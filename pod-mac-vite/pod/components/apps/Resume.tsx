@@ -1,7 +1,8 @@
 
-import React, { useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React from 'react';
+import { motion } from 'motion/react';
 import { transitions } from '../../src/types/motion';
+import { resume } from '../../src/data/resume';
 
 const sectionVariants = {
   initial: { opacity: 0, y: 20 },
@@ -24,92 +25,23 @@ const cardVariants = {
 };
 
 export const Resume: React.FC = () => {
-  const resumeRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = React.useState(false);
+  const [downloadError, setDownloadError] = React.useState<string | null>(null);
+  const downloadingRef = React.useRef(false);
 
   const handleDownloadPDF = async () => {
-    if (!resumeRef.current || isDownloading) return;
-    
+    if (downloadingRef.current) return;
+    downloadingRef.current = true;
     setIsDownloading(true);
-    const element = resumeRef.current;
-    let canvas: HTMLCanvasElement | undefined;
-    const originalStyles = {
-      width: element.style.width,
-      height: element.style.height,
-      overflow: element.style.overflow,
-      transform: element.style.transform,
-      transformOrigin: element.style.transformOrigin,
-    };
+    setDownloadError(null);
     try {
-      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
-        import('html2canvas'),
-        import('jspdf'),
-      ]);
-      element.style.width = '794px';
-      element.style.overflow = 'visible';
-      element.style.transform = 'none';
-
-      canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        windowWidth: 794,
-        windowHeight: element.scrollHeight,
-        onclone: (clonedDoc) => {
-          const clonedElement = clonedDoc.querySelector('[data-resume-content]') as HTMLElement;
-          if (clonedElement) {
-            clonedElement.style.width = '794px';
-            clonedElement.style.fontFamily = 'Arial, sans-serif';
-            clonedElement.style.fontSize = '12px';
-          }
-        }
-      });
-
-      Object.assign(element.style, originalStyles);
-
-      const imgData = canvas.toDataURL('image/png', 1.0);
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-        compress: true
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      
-      const ratio = pdfWidth / (imgWidth * 0.264583);
-      const imgWidthMm = imgWidth * 0.264583 * ratio;
-      const imgHeightMm = imgHeight * 0.264583 * ratio;
-
-      let remainingHeight = imgHeightMm;
-      let pageY = 0;
-      let pageNum = 0;
-
-      while (remainingHeight > 0) {
-        if (pageNum > 0) {
-          pdf.addPage();
-        }
-        
-        pdf.addImage(imgData, 'PNG', 0, -pageY * 0.264583 * ratio, imgWidthMm, imgHeightMm, undefined, 'FAST');
-        
-        remainingHeight -= pdfHeight;
-        pageY += pdfHeight / (0.264583 * ratio);
-        pageNum++;
-      }
-
-      pdf.save('Abhishek_Gupta_Resume.pdf');
+      const { createResumePDF } = await import('../../src/utils/resumePdf');
+      await createResumePDF().save(resume.filename, { returnPromise: true });
     } catch (error) {
       console.error('Error generating PDF:', error);
+      setDownloadError('PDF download failed. Please try again.');
     } finally {
-      Object.assign(element.style, originalStyles);
-      if (canvas) {
-        canvas.width = 0;
-        canvas.height = 0;
-      }
+      downloadingRef.current = false;
       setIsDownloading(false);
     }
   };
@@ -189,8 +121,13 @@ export const Resume: React.FC = () => {
           {isDownloading ? 'Generating PDF...' : 'Download PDF'}
         </motion.button>
 
+        {downloadError && (
+          <p role="alert" className="mb-4 max-w-[600px] text-sm text-red-300">
+            {downloadError}
+          </p>
+        )}
+
         <motion.div
-          ref={resumeRef}
           data-resume-content
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -210,7 +147,7 @@ export const Resume: React.FC = () => {
               transition={{ delay: 0.5 }}
               className="text-2xl md:text-3xl font-bold tracking-tight"
             >
-              ABHISHEK GUPTA
+              {resume.name}
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -218,7 +155,7 @@ export const Resume: React.FC = () => {
               transition={{ delay: 0.55 }}
               className="text-primary text-sm md:text-base font-semibold mt-1"
             >
-              Quality Assurance Engineer | Software Tester
+              {resume.headline}
             </motion.p>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -226,7 +163,7 @@ export const Resume: React.FC = () => {
               transition={{ delay: 0.6 }}
               className="text-xs text-slate-400 mt-2"
             >
-              B.Tech in Computer Science & Engineering, 2025
+              {resume.location}
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -242,7 +179,7 @@ export const Resume: React.FC = () => {
                 >
                   mail
                 </motion.span>
-                <span>abhishekg9630@gmail.com</span>
+                <span>{resume.email}</span>
               </div>
               <div className="flex items-center gap-1">
                 <motion.span
@@ -252,7 +189,7 @@ export const Resume: React.FC = () => {
                 >
                   call
                 </motion.span>
-                <span>+91-9560934582</span>
+                <span>{resume.phone}</span>
               </div>
             </motion.div>
           </motion.div>
@@ -281,14 +218,11 @@ export const Resume: React.FC = () => {
                 transition={{ delay: 0.1 }}
                 className="text-[10px] md:text-[11px] leading-relaxed text-slate-700"
               >
-                Dedicated Quality Assurance Engineer with hands-on experience in manual and automated testing. Skilled in identifying bugs, 
-                ensuring product quality, and improving testing processes. Strong background in software development with expertise in MERN stack 
-                and testing frameworks like Jest and Playwright. Proficient in AI-assisted development using GitHub Copilot, Cursor, and ChatGPT for 
-                test automation, code generation, and debugging. Committed to delivering high-quality software through rigorous testing and continuous improvement.
+                {resume.summary}
               </motion.p>
             </motion.section>
 
-            {/* Education */}
+            {/* Skills */}
             <motion.section
               variants={sectionVariants}
             >
@@ -297,21 +231,26 @@ export const Resume: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 className="text-[11px] md:text-xs font-bold uppercase tracking-widest border-b-2 border-slate-300 pb-1 mb-3 text-slate-900"
               >
-                Education
+                Technical Skills
               </motion.h2>
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
+                className="grid grid-cols-1 md:grid-cols-3 gap-3"
+                variants={{ animate: { transition: { staggerChildren: 0.05 } } }}
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-[11px] md:text-xs font-bold text-slate-900">B.Tech. Computer Science & Engineering</h3>
-                    <p className="text-[10px] text-primary font-semibold">KCC Institute of Technology and Management</p>
-                    <p className="text-[9px] md:text-[10px] text-slate-500">Greater Noida • 7.0 CGPA</p>
-                  </div>
-                  <span className="text-[9px] md:text-[10px] text-slate-500 font-medium whitespace-nowrap">May 2021 - Mar 2025</span>
-                </div>
+                {resume.skills.map((skill) => (
+                  <motion.div key={skill.label} variants={itemVariants}>
+                    <motion.h4
+                      className="text-[9px] md:text-[10px] font-bold text-primary uppercase mb-1.5"
+                    >
+                      {skill.label}
+                    </motion.h4>
+                    <motion.p
+                      className="text-[9px] md:text-[10px] text-slate-700 leading-relaxed"
+                    >
+                      {skill.skills}
+                    </motion.p>
+                  </motion.div>
+                ))}
               </motion.div>
             </motion.section>
 
@@ -324,44 +263,13 @@ export const Resume: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 className="text-[11px] md:text-xs font-bold uppercase tracking-widest border-b-2 border-slate-300 pb-1 mb-3 text-slate-900"
               >
-                Experience
+                Professional Experience
               </motion.h2>
               <motion.div
                 className="space-y-4"
                 variants={{ animate: { transition: { staggerChildren: 0.05 } } }}
               >
-                {[
-                  {
-                    title: 'Associate Engineer (QA)',
-                    company: 'Successive Digital',
-                    period: 'May 2025 - Present',
-                    items: [
-                      'Ran manual checks on new features to ensure everything worked as expected',
-                      'Reported clear and detailed issues to help speed up fixes',
-                      'Helped improve the testing process by sharing feedback with the team'
-                    ]
-                  },
-                  {
-                    title: 'Software Engineer Trainee',
-                    company: 'Successive Digital',
-                    period: 'May 2025 - Nov 2025',
-                    items: [
-                      'Developed the fitness-forge MERN app',
-                      'Develop skills in Next.js, Node.js with Jest Testing',
-                      'Technologies used: JavaScript, NEXT.js, Axios, MongoDB, Git, Github, Node.js, Graph QL'
-                    ]
-                  },
-                  {
-                    title: 'Freelance Web Developer',
-                    company: 'Freelance',
-                    period: 'May 2023 - Mar 2024',
-                    items: [
-                      'Delivered tailored web development solutions for various clients using React.js and Node.js',
-                      'Improved user experience and boosted website traffic by 15% on average',
-                      'Managed end-to-end project lifecycles, ensuring timely and high-quality deliverables'
-                    ]
-                  }
-                ].map((exp, i) => (
+                {resume.experience.map((exp) => (
                   <motion.div key={exp.title} variants={itemVariants}>
                     <div className="flex justify-between items-start mb-1">
                       <motion.h3
@@ -398,27 +306,10 @@ export const Resume: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 className="text-[11px] md:text-xs font-bold uppercase tracking-widest border-b-2 border-slate-300 pb-1 mb-3 text-slate-900"
               >
-                Projects
+                Selected Projects
               </motion.h2>
               <motion.div className="space-y-3" variants={{ animate: { transition: { staggerChildren: 0.05 } } }}>
-                {[
-                  {
-                    title: 'Trail Management System - Agmatix',
-                    items: [
-                      'Tested core features of the trial platform to ensure smooth data flow and reliable performance',
-                      'Reported bugs with clear steps and worked with the team to improve system quality',
-                      'Checked each update of the tool to make sure it stayed stable and easy to use'
-                    ]
-                  },
-                  {
-                    title: 'FitForge - The Fitness Tracker',
-                    items: [
-                      'Developed a full stack web app using MERN stack for fitness lovers',
-                      'The application shows the analytical data of the workout with progress photo feature',
-                      'Libraries: MERN, Graph QL'
-                    ]
-                  }
-                ].map((proj, i) => (
+                {resume.projects.map((proj) => (
                   <motion.div key={proj.title} variants={itemVariants}>
                     <motion.h3
                       whileHover={{ color: 'var(--color-accent-primary)' }}
@@ -438,7 +329,7 @@ export const Resume: React.FC = () => {
               </motion.div>
             </motion.section>
 
-            {/* Skills */}
+            {/* Education */}
             <motion.section
               variants={sectionVariants}
             >
@@ -447,31 +338,21 @@ export const Resume: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 className="text-[11px] md:text-xs font-bold uppercase tracking-widest border-b-2 border-slate-300 pb-1 mb-3 text-slate-900"
               >
-                Skills
+                Education
               </motion.h2>
               <motion.div
-                className="grid grid-cols-1 md:grid-cols-3 gap-3"
-                variants={{ animate: { transition: { staggerChildren: 0.05 } } }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
               >
-                {[
-                  { label: 'QA & Testing', skills: 'Manual Testing, Automated Testing, Bug Reporting, Test Cases, Jest, Playwright, Selenium, Cypress, API Testing, Regression Testing, Smoke Testing' },
-                  { label: 'Development', skills: 'JavaScript, React Native, Node.js, HTML, CSS, MERN Stack, Next.js' },
-                  { label: 'Tools & Others', skills: 'Git, GitHub, MongoDB, MySQL, Postman, Android Development, C++, Python, Docker, CI/CD Pipelines' },
-                  { label: 'AI Development Tools', skills: 'GitHub Copilot, Cursor IDE, ChatGPT, Claude Code, AI-assisted testing, Prompt engineering for test generation' }
-                ].map((skill, i) => (
-                  <motion.div key={skill.label} variants={itemVariants}>
-                    <motion.h4
-                      className="text-[9px] md:text-[10px] font-bold text-primary uppercase mb-1.5"
-                    >
-                      {skill.label}
-                    </motion.h4>
-                    <motion.p
-                      className="text-[9px] md:text-[10px] text-slate-700 leading-relaxed"
-                    >
-                      {skill.skills}
-                    </motion.p>
-                  </motion.div>
-                ))}
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-[11px] md:text-xs font-bold text-slate-900">{resume.education.degree}</h3>
+                    <p className="text-[10px] text-primary font-semibold">{resume.education.institution}</p>
+                    <p className="text-[9px] md:text-[10px] text-slate-500">{resume.education.location} • {resume.education.grade}</p>
+                  </div>
+                  <span className="text-[9px] md:text-[10px] text-slate-500 font-medium whitespace-nowrap">{resume.education.period}</span>
+                </div>
               </motion.div>
             </motion.section>
 
@@ -487,11 +368,7 @@ export const Resume: React.FC = () => {
                 Additional Information
               </motion.h2>
               <motion.div className="space-y-2" variants={{ animate: { transition: { staggerChildren: 0.05 } } }}>
-                {[
-                  { label: 'Languages:', value: 'Hindi, English' },
-                  { label: 'Certifications:', value: 'Machine Learning Course by Andrew Nug On Cousera, Java Foundational Certification on Udemy, Digital Marketing Certification on Google, Graph QL Associate Certification' },
-                  { label: 'Awards/Activities:', value: 'Snap AR hackathon(2022): Among the top 10% successful candidates. Nasa Space App hackathon: Among the top 20% successful candidates.' }
-                ].map((info, i) => (
+                {resume.additional.map((info) => (
                   <motion.div key={info.label} variants={itemVariants}>
                     <motion.h4 className="text-[9px] md:text-[10px] font-bold text-slate-900">{info.label}</motion.h4>
                     <motion.p className="text-[9px] md:text-[10px] text-slate-700">{info.value}</motion.p>
@@ -507,7 +384,7 @@ export const Resume: React.FC = () => {
             transition={{ delay: 0.8 }}
             className="p-4 text-center text-[9px] text-slate-400 border-t border-slate-200"
           >
-            <p>Abhishek Gupta • Quality Assurance Engineer • 2026</p>
+            <p>Abhishek Gupta • QA Automation Engineer</p>
           </motion.div>
         </motion.div>
       </motion.div>
